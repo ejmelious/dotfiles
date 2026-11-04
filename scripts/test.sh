@@ -136,6 +136,14 @@ check allow "rm -f file"
 check allow "git push origin feature/maintenance"
 check allow "git push -u origin my-branch"
 check allow "echo main"
+# On main, a push naming another branch is fine wherever its flags go.
+check allow "git push origin --delete old-branch"
+check allow "git push --delete origin old-branch"
+check allow "git push origin -u my-branch"
+check block "git push origin --delete main"
+# A flag's value isn't a branch name, so this is still a bare push of main.
+check block "git push -o ci.skip origin"
+check block "git push --push-option ci.skip origin"
 git -C "$repo" checkout -q -b feature
 check allow "git push"
 pass "guard-bash hook"
