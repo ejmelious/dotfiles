@@ -151,6 +151,9 @@ other="$SANDBOX/other"; git init -q -b main "$other"
 check block "git -C $other push origin"
 check block "git -C ../other push"
 check allow "git -C $other push origin my-branch"
+# "push" inside the -C path isn't the subcommand.
+pushrepo="$SANDBOX/push-repo"; git init -q -b main "$pushrepo"
+check block "git -C $pushrepo push origin"
 pass "guard-bash hook"
 
 # Status line renders.

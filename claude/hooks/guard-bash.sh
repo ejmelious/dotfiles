@@ -25,7 +25,11 @@ while IFS= read -r seg; do
         exit 2
     fi
 
-    if printf '%s' "$words" | grep -qE '^git([[:space:]]+-C[[:space:]]+[^[:space:]]+)?[[:space:]]+push([[:space:]]|$)'; then
+    push_re='^git([[:space:]]+-C[[:space:]]+[^[:space:]]+)?[[:space:]]+push([[:space:]]|$)'
+    if [[ "$words" =~ $push_re ]]; then
+        # Everything after the matched subcommand, so a "push" inside a -C
+        # path can't be mistaken for it.
+        push_args="${words:${#BASH_REMATCH[0]}}"
         # Explicit push to main/master (including HEAD:main, +main, origin main).
         if printf '%s' "$words" | grep -qE '([[:space:]:+]|^)(main|master)([[:space:]]|$)'; then
             echo "BLOCKED: don't push to main/master directly. Push a feature branch and open a PR." >&2
@@ -47,7 +51,7 @@ while IFS= read -r seg; do
             # Two or more means remote plus refspec, which the check above has
             # already cleared. Skip the values of flags that take one, so
             # `-o ci.skip origin` still counts as a bare push.
-            read -ra argv <<< "${words#*push}"
+            read -ra argv <<< "$push_args"
             positional=0 skip_next=0
             # ${a[@]+...}: bash 3.2 (macOS) treats an empty array as unset under set -u.
             for arg in ${argv[@]+"${argv[@]}"}; do
