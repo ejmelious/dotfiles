@@ -31,7 +31,8 @@ into `~/.zshrc.local`.
 | `claude/hooks/guard-bash.sh`, `claude/statusline.sh` | `<claude dir>/…` | link |
 | `claude/rules/*.md` | `<claude dir>/rules/` | link; path-scoped rules, e.g. TypeScript rules load only for `.ts`/`.tsx` work |
 | `codex/config.toml` | `~/.codex/config.toml` | copied **once** if missing |
-| `zsh/.zshenv`, `.zprofile`, `.zshrc` | `~/` | link |
+| `zsh/.zshenv`, `.zprofile` | `~/` | link |
+| `zsh/.zshrc` | `~/.zshrc` | **sourced** from a small plain file, so tools that add to `~/.zshrc` don't break it |
 | `git/config`, `git/ignore` | `~/.config/git/` | link |
 | `git/ona.gitconfig` | `~/.config/git/config.ona` | link, **Ona only** |
 | `bin/dotfiles-doctor`, `bin/agent-notify` | `~/.local/bin/` | link |
