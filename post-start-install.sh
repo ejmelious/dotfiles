@@ -12,8 +12,8 @@
 # Shell history is shared via HISTFILE in .zshrc rather than a symlink,
 # because zsh replaces the history file on save and would break a link.
 #
-# Claude Code login is deliberately not shared: its tokens refresh in place,
-# so an EFS copy goes stale. Run `claude` and sign in once per environment.
+# Claude Code's folder is whatever Ona sets in CLAUDE_CONFIG_DIR (on EFS), so
+# its login is shared through Ona, not through a link made here.
 set -euo pipefail
 
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
@@ -77,5 +77,18 @@ fi
 
 share_file ".codex/auth.json"
 share_dir ".config/gh"
+
+# Ona points Claude Code at a folder on EFS through CLAUDE_CONFIG_DIR.
+# install.sh runs before the mount and skips folders that don't exist yet,
+# so the skills, rules, hooks and settings are applied to it here instead.
+# If this hook doesn't see the variable, fall back to an existing EFS folder.
+claude_dir="${CLAUDE_CONFIG_DIR:-}"
+if [ -z "$claude_dir" ] && [ -d "$EFS/.claude" ]; then
+    claude_dir="$EFS/.claude"
+fi
+if [ -n "$claude_dir" ] && [ "$claude_dir" != "$HOME/.claude" ]; then
+    mkdir -p "$claude_dir"
+    CLAUDE_CONFIG_DIRS="$HOME/.claude $claude_dir" "$DOTFILES/install.sh"
+fi
 
 ok "EFS links configured"

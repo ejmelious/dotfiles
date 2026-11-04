@@ -193,6 +193,12 @@ is_link_to "$HOME/.codex/auth.json" "$EFS_MOUNT_POINT/.codex/auth.json"
 is_link_to "$HOME/.config/gh" "$EFS_MOUNT_POINT/.config/gh"
 [ -f "$EFS_MOUNT_POINT/.codex/auth.json" ] || fail "auth.json not moved onto EFS"
 [ ! -L "$HOME/.codex" ] || fail "\$HOME/.codex should stay a local directory"
+[ ! -e "$EFS_MOUNT_POINT/.claude" ] || fail "created an EFS Claude folder nobody asked for"
+# Ona sets CLAUDE_CONFIG_DIR to a folder on EFS that install.sh never saw.
+export CLAUDE_CONFIG_DIR="$EFS_MOUNT_POINT/.claude"
+"$DOTFILES/post-start-install.sh" > "$SANDBOX/efs1b.log" 2>&1 || { cat "$SANDBOX/efs1b.log"; fail "post-start with CLAUDE_CONFIG_DIR"; }
+check_claude_dir "$CLAUDE_CONFIG_DIR"
+jq -e '.hooks.PreToolUse | length == 1' "$CLAUDE_CONFIG_DIR/settings.json" >/dev/null || fail "EFS Claude settings not merged"
 "$DOTFILES/post-start-install.sh" > "$SANDBOX/efs2.log" 2>&1 || fail "post-start run 2"
 grep -qE "Backed up|Linked|Moved" "$SANDBOX/efs2.log" && fail "post-start not idempotent"
 
@@ -208,7 +214,7 @@ grep -q '@HOME@' "$HOME/.codex/config.toml" && fail "seeded Codex config kept th
 # GNU stat first: on Linux `stat -f` means filesystem status and doesn't fail.
 [ "$(stat -c %a "$HOME/.codex/config.toml" 2>/dev/null || stat -f %Lp "$HOME/.codex/config.toml")" = 600 ] || fail "seeded Codex config not mode 600"
 
-unset EFS_MOUNT_POINT
+unset EFS_MOUNT_POINT CLAUDE_CONFIG_DIR
 "$DOTFILES/post-start-install.sh" >/dev/null 2>&1 || fail "post-start should exit 0 without EFS"
 pass "post-start-install.sh"
 

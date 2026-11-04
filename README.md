@@ -128,11 +128,13 @@ in `.ai-dev/`, so scratch work never lands in a commit.
 - `~/.config/gh` — GitHub CLI login.
 - Shell history, via `HISTFILE` in `.zshrc`.
 
-Claude Code login is **not** shared: tokens refresh in place, so a shared copy goes
-stale. Run `claude` and sign in once per environment. Never script around Claude or
-Codex login.
+Ona sets `CLAUDE_CONFIG_DIR=/efs/.claude`, so Claude Code's whole folder, login
+included, already lives on EFS. `install.sh` runs before the mount and can't set that
+folder up, so `post-start-install.sh` re-runs it for `$CLAUDE_CONFIG_DIR` (or an
+existing `$EFS_MOUNT_POINT/.claude`) to add the skills, rules, hooks and settings.
+Never script around Claude or Codex login.
 
-To enable, add `EFS_MOUNT_POINT=/efs-home` to your Ona personal secrets. EFS has no
+To enable, add `EFS_MOUNT_POINT=/efs` to your Ona personal secrets. EFS has no
 backups.
 
 `.zshenv` loads `/etc/profile.d/ona-secrets.sh`, since Ona only loads secrets into bash.
