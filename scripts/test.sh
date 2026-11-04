@@ -55,6 +55,7 @@ pass "default touches only ~/.claude"
 
 # Opting a machine into extra profiles via ~/.config/dotfiles/claude-dirs.
 mkdir -p "$HOME/.config/dotfiles"
+# shellcheck disable=SC2088 # a literal ~ on purpose: install.sh expands it
 printf '%s\n' '# laptop profiles' '~/.claude-vanta' '~/.claude-personal' > "$HOME/.config/dotfiles/claude-dirs"
 "$DOTFILES/install.sh" > "$SANDBOX/run1b.log" 2>&1 || { cat "$SANDBOX/run1b.log"; fail "install.sh with claude-dirs"; }
 check_claude_dir "$HOME/.claude-vanta"
@@ -76,7 +77,7 @@ pass "settings merged"
 
 c="$HOME/.codex/config.toml"
 [ "$(head -1 "$c")" = 'forced_login_method = "chatgpt"' ] || fail "forced_login_method not first line of Codex config"
-grep -q keep-me "$c" && grep -q 'trust_level = "trusted"' "$c" || fail "lost existing Codex settings"
+{ grep -q keep-me "$c" && grep -q 'trust_level = "trusted"' "$c"; } || fail "lost existing Codex settings"
 [ "$(grep -c '^forced_login_method' "$c")" = 1 ] || fail "forced_login_method duplicated"
 grep -qx 'project_doc_fallback_filenames = \["CLAUDE.md"\]' "$c" || fail "Codex CLAUDE.md fallback not added"
 grep -qxF "notify = [\"$HOME/.local/bin/agent-notify\", \"Codex\"]" "$c" || fail "Codex notify not added"
@@ -87,7 +88,7 @@ printf '%s\n' 'notify = ["mine"]' > "$SANDBOX/codex-notify.toml"
 cp "$c" "$SANDBOX/codex-saved.toml"
 cp "$SANDBOX/codex-notify.toml" "$c"
 "$DOTFILES/install.sh" > "$SANDBOX/run1c.log" 2>&1 || { cat "$SANDBOX/run1c.log"; fail "install.sh with existing notify"; }
-[ "$(grep -c '^notify' "$c")" = 1 ] && grep -qxF 'notify = ["mine"]' "$c" || fail "replaced an existing Codex notify"
+{ [ "$(grep -c '^notify' "$c")" = 1 ] && grep -qxF 'notify = ["mine"]' "$c"; } || fail "replaced an existing Codex notify"
 cp "$SANDBOX/codex-saved.toml" "$c"
 pass "Codex keeps an existing notify"
 
@@ -167,7 +168,7 @@ echo 'placeholder' > "$HOME/.config/gh/hosts.yml"
 is_link_to "$HOME/.codex/auth.json" "$EFS_MOUNT_POINT/.codex/auth.json"
 is_link_to "$HOME/.config/gh" "$EFS_MOUNT_POINT/.config/gh"
 [ -f "$EFS_MOUNT_POINT/.codex/auth.json" ] || fail "auth.json not moved onto EFS"
-[ ! -L "$HOME/.codex" ] || fail "~/.codex should stay a local directory"
+[ ! -L "$HOME/.codex" ] || fail "\$HOME/.codex should stay a local directory"
 "$DOTFILES/post-start-install.sh" > "$SANDBOX/efs2.log" 2>&1 || fail "post-start run 2"
 grep -qE "Backed up|Linked|Moved" "$SANDBOX/efs2.log" && fail "post-start not idempotent"
 
@@ -180,7 +181,8 @@ is_link_to "$HOME/.codex/AGENTS.md" "$HOME/.agents/AGENTS.md"
 # That rerun seeded a fresh Codex config from codex/config.toml.
 grep -qxF "notify = [\"$HOME/.local/bin/agent-notify\", \"Codex\"]" "$HOME/.codex/config.toml" || fail "seeded Codex config has wrong notify path"
 grep -q '@HOME@' "$HOME/.codex/config.toml" && fail "seeded Codex config kept the @HOME@ placeholder"
-[ "$(stat -f %Lp "$HOME/.codex/config.toml" 2>/dev/null || stat -c %a "$HOME/.codex/config.toml")" = 600 ] || fail "seeded Codex config not mode 600"
+# GNU stat first: on Linux `stat -f` means filesystem status and doesn't fail.
+[ "$(stat -c %a "$HOME/.codex/config.toml" 2>/dev/null || stat -f %Lp "$HOME/.codex/config.toml")" = 600 ] || fail "seeded Codex config not mode 600"
 
 unset EFS_MOUNT_POINT
 "$DOTFILES/post-start-install.sh" >/dev/null 2>&1 || fail "post-start should exit 0 without EFS"

@@ -65,14 +65,14 @@ merge_claude_settings() {
         rm -f "$tmp"
     else
         mv "$tmp" "$target"
-        ok "Merged policy into ${target/#"$HOME"/\~}"
+        ok "Merged policy into ${target/#"$HOME"/$tilde}"
     fi
 }
 
 for dir in $claude_dirs; do
     # Only ~/.claude is created if missing; a listed profile must already exist.
     if [ ! -d "$dir" ] && [ "$dir" != "$HOME/.claude" ]; then
-        skip "${dir/#"$HOME"/\~} doesn't exist; skipping"
+        skip "${dir/#"$HOME"/$tilde} doesn't exist; skipping"
         continue
     fi
     mkdir -p "$dir"
@@ -129,7 +129,7 @@ link "$DOTFILES/bin/agent-notify" "$HOME/.local/bin/agent-notify"
 # automatically; point at where they belong.
 if [ -f "$BACKUP_DIR/.zshrc" ] && grep -qE '^export [A-Z_]*(KEY|TOKEN|SECRET|PASSWORD)[A-Z_]*=' "$BACKUP_DIR/.zshrc"; then
     warn "Your old ~/.zshrc exported secrets. Move those lines into ~/.zshrc.local (never committed)."
-    warn "Old file: ${BACKUP_DIR/#"$HOME"/\~}/.zshrc"
+    warn "Old file: ${BACKUP_DIR/#"$HOME"/$tilde}/.zshrc"
 fi
 
 # --- Jira ---------------------------------------------------------------------

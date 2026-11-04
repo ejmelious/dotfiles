@@ -12,6 +12,8 @@ while [ -L "$src" ]; do
 done
 DOTFILES="$(cd "$(dirname "$src")/.." && pwd)"
 failures=0
+# See lib/common.sh: \~ in a replacement keeps its backslash in bash 3.2.
+tilde=\~
 
 if [ -t 1 ]; then g=$'\033[32m' r=$'\033[31m' y=$'\033[33m' n=$'\033[0m'; else g='' r='' y='' n=''; fi
 pass() { printf '  %s✓%s %s\n' "$g" "$n" "$1"; }
@@ -20,7 +22,7 @@ note() { printf '  %s-%s %s\n' "$y" "$n" "$1"; }
 section() { printf '\n%s\n' "$1"; }
 
 check_link() { # path target label
-    if [ -L "$1" ] && [ "$(readlink "$1")" = "$2" ]; then pass "$3"; else fail "$3 (${1/#"$HOME"/\~} not linked)"; fi
+    if [ -L "$1" ] && [ "$(readlink "$1")" = "$2" ]; then pass "$3"; else fail "$3 (${1/#"$HOME"/$tilde} not linked)"; fi
 }
 
 section "Tools"
@@ -64,7 +66,7 @@ else
 fi
 for dir in $claude_dirs; do
     [ -d "$dir" ] || continue
-    label="${dir/#"$HOME"/\~}"
+    label="${dir/#"$HOME"/$tilde}"
     check_link "$dir/CLAUDE.md" "$DOTFILES/claude/CLAUDE.md" "$label/CLAUDE.md"
     if jq -e '.hooks.PreToolUse // [] | map(.hooks[].command) | any(test("guard-bash"))' "$dir/settings.json" &>/dev/null; then
         pass "$label settings include the guard hook"
