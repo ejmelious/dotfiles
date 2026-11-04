@@ -48,7 +48,7 @@ while IFS= read -r seg; do
                 \"*\") dir="${dir#\"}"; dir="${dir%\"}" ;;
                 \'*\') dir="${dir#\'}"; dir="${dir%\'}" ;;
             esac
-            case "$dir" in "~"|"~/"*) dir="$HOME${dir#\~}" ;; esac
+            case "$dir" in \~|\~/*) dir="$HOME${dir#\~}" ;; esac
             case "$dir" in
                 /*) target="$dir" ;;
                 *) target="$target/$dir" ;;

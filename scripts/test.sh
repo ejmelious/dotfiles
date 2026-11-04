@@ -159,6 +159,7 @@ check allow "git -C $other push origin my-branch"
 pushrepo="$SANDBOX/push-repo"; git init -q -b main "$pushrepo"
 check block "git -C $pushrepo push origin"
 # A -C path the hook can't resolve (spaces, variables) fails closed.
+# shellcheck disable=SC2016 # a literal, unexpanded variable on purpose
 check block 'git -C "$SOME_REPO" push origin'
 check block "git -C \"$SANDBOX/no such dir\" push origin"
 pass "guard-bash hook"
