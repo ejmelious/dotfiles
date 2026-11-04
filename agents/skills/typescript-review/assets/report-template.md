@@ -28,7 +28,7 @@
   + const order = parseOrder(JSON.parse(body)); // throws on invalid shape
   ```
 - **Verified:** <new test that failed before and passes now / typecheck / lint / tests vs baseline>
-- **Commit:** `abc1234`, revertable on its own
+- **Commit:** `abc1234`, revertable on its own (or "Not committed — uncommitted work in the tree")
 - **Rule:** ET #<n> <title> / <pitfall name>
 
 <One block per Critical/High finding, in table order. For ✋ and ↩️ findings, replace "What was done" with "Why not fixed here" and "Recommended fix"; for ↩️ also say what failed.>

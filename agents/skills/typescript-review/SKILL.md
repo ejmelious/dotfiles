@@ -36,7 +36,8 @@ Work out what "the work" is, in this order:
   `git symbolic-ref --short refs/remotes/origin/HEAD`, then a local `main`
   or `master`. Check the ref exists (`git rev-parse --verify <base>`)
   before diffing — a local-only repo has no `origin/*` refs.
-- Otherwise the uncommitted working tree.
+- Otherwise the uncommitted working tree. Fixes then stay uncommitted (see
+  "Uncommitted work" in step 6).
 
 Review the changed `.ts`, `.tsx`, `.mts`, `.cts` files (and `.d.ts`). Read
 enough surrounding code — callers, the types the change touches, tsconfig — to
@@ -156,6 +157,10 @@ already says you may commit (e.g. "fix and commit them"), that is the
 consent — say you're proceeding on it. If there are no Critical/High
 findings, skip this step: there is nothing to commit.
 
+When fixes will stay uncommitted (see "Uncommitted work" in step 6), ask
+only to edit the files instead, e.g. "I'll fix these 4 in your working
+tree and won't commit anything, so your own changes stay separate. OK?"
+
 ### 6. Fix Critical and High
 
 Fix them one finding at a time, most severe first. Medium and Low are the
@@ -186,6 +191,15 @@ For each fix:
    `TS-02 · Critical`, then: what was wrong (the failure scenario), what
    changed, why this fix and not another, and how it was verified. One commit
    per finding so each can be reverted alone.
+
+**Uncommitted work.** A commit takes the whole file, so committing a fix in
+a file the user had already changed would put their unfinished edits into
+your fix commit. Run `git status` before the first fix. If you're reviewing
+the working tree, or any file you need to fix already has uncommitted
+changes, make no commits this run: leave every fix in the working tree, keep
+the per-file backups so each fix can still be undone, and write "Not
+committed — uncommitted work in the tree" in the report's Commit column.
+There is then nothing to push in step 8.
 
 Things you must not do to make a fix pass, because each one hides the
 problem instead of fixing it: `as any`, `as unknown as T`, new `!`,
