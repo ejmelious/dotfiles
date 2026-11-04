@@ -42,10 +42,10 @@ This is the heart of the skill and is identical in every phase. Read **`referenc
 
 ## Output structure
 
-Every initiative gets its own **feature folder** under `docs/implementation-plan/`. A **manifest.yaml** at the root catalogs the feature(s) and points back into the folder structure. The skill creates both at session start (see next section).
+Every initiative gets its own **feature folder** under `.ai-dev/implementation-plan/`. A **manifest.yaml** at the root catalogs the feature(s) and points back into the folder structure. The skill creates both at session start (see next section).
 
 ```
-docs/implementation-plan/
+.ai-dev/implementation-plan/
 ├── manifest.yaml                       # feature catalog — created at session start, updated end of each phase
 └── <feature-slug>/                     # kebab-case slug derived from the feature name
     ├── 00-index.md                     # running index: phase status, artifact links, open decisions
@@ -79,8 +79,8 @@ Keep final artifacts clean and executive-readable. Keep the `.loops/` critiques 
 Before Phase 1's loops fire, the orchestrator does three things:
 
 1. **Confirm the feature name with the user** if it's not explicit. Derive it from the PRD title if unambiguous; otherwise ask one short question.
-2. **Derive the kebab-case slug** (lowercase, hyphens, no punctuation) — e.g. "Project Client Support in HIP" → `project-client-support`. If a folder of that slug already exists under `docs/implementation-plan/`, ask the user before overwriting.
-3. **Create `docs/implementation-plan/<feature-slug>/`** and write a skeleton `manifest.yaml` at `docs/implementation-plan/manifest.yaml`.
+2. **Derive the kebab-case slug** (lowercase, hyphens, no punctuation) — e.g. "Project Client Support in HIP" → `project-client-support`. If a folder of that slug already exists under `.ai-dev/implementation-plan/`, ask the user before overwriting.
+3. **Create `.ai-dev/implementation-plan/<feature-slug>/`** and write a skeleton `manifest.yaml` at `.ai-dev/implementation-plan/manifest.yaml`.
 
 ### Manifest schema
 

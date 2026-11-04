@@ -1,6 +1,6 @@
 ---
 name: implementation-plan-executor
-description: Autonomously execute an existing engineering implementation plan against a codebase — milestone by milestone, test-first, self-validating and self-correcting — until the whole implementation is complete or it safely hard-stops. Use this skill whenever the user wants to implement, execute, or "build out" a plan produced by the implementation-plan-builder (or any plan with milestones, eng specs, and a test plan), work through the milestones, or turn an approved implementation plan into shipped code. Trigger it when the user says things like "implement the plan," "execute the implementation plan," "work through the milestones," or "build this out from the plan" — even if they just point at a docs/implementation-plan folder and a repo. It runs unattended and only returns for a final report or an escalation, so prefer it over ad hoc implementation whenever a structured plan exists.
+description: Autonomously execute an existing engineering implementation plan against a codebase — milestone by milestone, test-first, self-validating and self-correcting — until the whole implementation is complete or it safely hard-stops. Use this skill whenever the user wants to implement, execute, or "build out" a plan produced by the implementation-plan-builder (or any plan with milestones, eng specs, and a test plan), work through the milestones, or turn an approved implementation plan into shipped code. Trigger it when the user says things like "implement the plan," "execute the implementation plan," "work through the milestones," or "build this out from the plan" — even if they just point at a .ai-dev/implementation-plan folder and a repo. It runs unattended and only returns for a final report or an escalation, so prefer it over ad hoc implementation whenever a structured plan exists.
 ---
 
 # Implementation Plan Executor
@@ -11,7 +11,7 @@ This is the companion to `implementation-plan-builder`. The builder produces the
 
 ## Inputs
 
-1. **The implementation plan** — a feature-slug folder under `docs/implementation-plan/<feature-slug>/`, produced by `implementation-plan-builder`. It contains a `manifest.yaml` (the handoff contract: identity, milestone list, sign-off status) plus the per-milestone eng specs, execution plans, and test plans. **All context for the run lives in this one folder** — reference it throughout.
+1. **The implementation plan** — a feature-slug folder under `.ai-dev/implementation-plan/<feature-slug>/`, produced by `implementation-plan-builder`, holding the per-milestone eng specs, execution plans, and test plans. The handoff contract (identity, milestone list, sign-off status) is the builder's shared `.ai-dev/implementation-plan/manifest.yaml`, one level up. It is either a single feature entry or, once a second plan exists, a top-level `features:` list; use the entry whose `folder` matches the selected `<feature-slug>`. **All other context for the run lives in the feature folder** — reference it throughout.
 2. **The codebase** — the current working repository.
 
 ### Selecting the plan (before the autonomous run)
@@ -22,8 +22,8 @@ Plan selection happens *before* the run goes heads-down, so asking the user here
 - **Multiple plan folders** → ask the user which `<feature-slug>` to execute. Never guess.
 
 ### Verifying the plan is safe to execute
-Before doing anything, read the selected `manifest.yaml` and refuse to proceed unless all hold — refusing here is the point of the contract:
-- `manifest.yaml` exists and parses.
+Before doing anything, read the selected feature's manifest entry and refuse to proceed unless all hold — refusing here is the point of the contract:
+- `.ai-dev/implementation-plan/manifest.yaml` exists, parses, and has exactly one entry whose `folder` is the selected `<feature-slug>`.
 - `signed_off: true` **and** `status: complete`. A plan that isn't signed off (Phase 6 didn't bless it) or isn't complete is **not executable** — stop and report why. Executing an unfinished or blocked plan is exactly the failure this skill exists to prevent.
 - `open_decisions: 0`. Unresolved open decisions mean humans still owe the plan a call; don't paper over them by executing anyway.
 - `target_repo` matches the repo this is being run against. On mismatch, stop and ask — the plan may belong to a different codebase.
@@ -66,8 +66,8 @@ The **control spine** (`references/verification-ledger-escalation.md`) defines v
 
 The executor works on a dedicated branch and writes everything inside the plan's own folder, so the plan and its execution record stay together:
 - **Code + commits** — per the milestone's PR strategy (Phase 4).
-- **The ledger** — `docs/implementation-plan/<feature-slug>/.execution/ledger.md` (progress, baseline, last green commit).
-- **Reports** — `docs/implementation-plan/<feature-slug>/.execution/` (final report on success, escalation report on hard-stop).
+- **The ledger** — `.ai-dev/implementation-plan/<feature-slug>/.execution/ledger.md` (progress, baseline, last green commit).
+- **Reports** — `.ai-dev/implementation-plan/<feature-slug>/.execution/` (final report on success, escalation report on hard-stop).
 
 Operating boundaries, in addition to the principles:
 - **Commit locally; do not push or open PRs automatically.** Pushing and PR creation are the natural human review surface — leave them to the person. The final report says exactly what's ready to push. (Configurable, but this is the default and the safe one.)

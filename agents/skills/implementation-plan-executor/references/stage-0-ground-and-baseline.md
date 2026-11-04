@@ -3,9 +3,9 @@
 Establish solid ground before any code is touched. Most autonomous-execution failures trace back to skipping this. Read the control spine first.
 
 ## 1. Select and verify the plan
-Per the SKILL's input rules: find the plan folder(s) under `docs/implementation-plan/`. If there are several, ask which `<feature-slug>` to run; if none, stop and point the user to `implementation-plan-builder`. Read `manifest.yaml` and **refuse to proceed** unless it's present, `signed_off: true`, `status: complete`, `open_decisions: 0`, and `target_repo` matches this repo. Confirm the run-summary back to the user (feature, milestones, branch, sign-off date) before going autonomous.
+Per the SKILL's input rules: find the plan folder(s) under `.ai-dev/implementation-plan/`. If there are several, ask which `<feature-slug>` to run; if none, stop and point the user to `implementation-plan-builder`. Read `.ai-dev/implementation-plan/manifest.yaml` (the builder keeps one shared manifest, a single entry or a `features:` list) and take the entry whose `folder` matches the selected slug. **Refuse to proceed** unless that entry is present, `signed_off: true`, `status: complete`, `open_decisions: 0`, and `target_repo` matches this repo. Confirm the run-summary back to the user (feature, milestones, branch, sign-off date) before going autonomous.
 
-Then load the plan artifacts from the selected `docs/implementation-plan/<feature-slug>/` folder: refined PRD, holistic architecture, milestone plan, and per-milestone eng specs, execution plans, and test plans. Read the whole plan before starting, not just milestone 1 — you need the holistic architecture and the manifest's dependency-ordered milestone list to execute safely.
+Then load the plan artifacts from the selected `.ai-dev/implementation-plan/<feature-slug>/` folder: refined PRD, holistic architecture, milestone plan, and per-milestone eng specs, execution plans, and test plans. Read the whole plan before starting, not just milestone 1 — you need the holistic architecture and the manifest's dependency-ordered milestone list to execute safely.
 
 ## 2. Ground in the codebase
 Explore the actual repository — entry points, the modules the plan references, existing patterns, test layout. Read the code; don't infer it from the plan. The plan tells you the intent; the repo tells you the reality you're editing.
@@ -26,6 +26,6 @@ Run the full toolchain.
 Record `baseline_commit`.
 
 ## 6. Branch and initialize the ledger
-Create the dedicated working branch. Initialize `docs/implementation-plan/<feature-slug>/.execution/ledger.md` with the baseline commit, baseline failure set, branch, the milestone list **from the manifest** (in dependency order, all `pending`), and `run_status: running`. Set `last_green_commit` to the baseline.
+Create the dedicated working branch. Initialize `.ai-dev/implementation-plan/<feature-slug>/.execution/ledger.md` with the baseline commit, baseline failure set, branch, the milestone list **from the manifest** (in dependency order, all `pending`), and `run_status: running`. Set `last_green_commit` to the baseline.
 
 On completion of Stage 0, proceed to Stage 1.
