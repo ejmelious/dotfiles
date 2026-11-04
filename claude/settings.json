@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "forceLoginMethod": "claudeai",
+  "enableAllProjectMcpServers": false,
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git log)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr checks *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(sudo *)",
+      "Bash(mkfs *)",
+      "Bash(dd *)",
+      "Bash(curl *| bash*)",
+      "Bash(curl *|bash*)",
+      "Bash(curl *| sh*)",
+      "Bash(curl *|sh*)",
+      "Bash(wget *| bash*)",
+      "Bash(wget *|bash*)",
+      "Bash(git push --force*)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * -f*)",
+      "Bash(git reset --hard*)",
+      "Edit(~/.ssh/**)",
+      "Edit(~/.zshrc.local)",
+      "Read(~/.ssh/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.azure/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.config/acli/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.git-credentials)",
+      "Read(~/.netrc)",
+      "Read(~/.npmrc)",
+      "Read(~/.pypirc)",
+      "Read(~/.codex/auth.json)",
+      "Read(~/.claude.json)",
+      "Read(~/.claude*/.claude.json)",
+      "Read(~/.claude*/.credentials.json)",
+      "Read(~/.zshrc.local)",
+      "Read(~/.zsh_history)",
+      "Read(/etc/profile.d/ona-secrets.sh)",
+      "Read(~/Library/Keychains/**)",
+      "Read(~/Library/Cookies/**)",
+      "Read(~/Library/Application Support/Google/Chrome/**)",
+      "Read(~/Library/Application Support/Firefox/**)",
+      "Read(~/Library/Application Support/Slack/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/guard-bash.sh\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.local/bin/agent-notify\" \"Claude Code\" \"Needs your attention\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.local/bin/agent-notify\" \"Claude Code\" \"Finished\""
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/statusline.sh\"",
+    "padding": 0
+  }
+}

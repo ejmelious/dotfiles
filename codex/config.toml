@@ -1,0 +1,14 @@
+# Seed for a fresh ~/.codex/config.toml (Ona). Copied once by install.sh and
+# never overwritten: Codex edits this file itself (trusted projects, plugins).
+# @HOME@ is replaced with your home directory when seeding.
+# Use the company ChatGPT subscription (SSO), never a model API key.
+forced_login_method = "chatgpt"
+model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+# Codex's defaults, written out: ask before leaving the workspace sandbox.
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+# Also read CLAUDE.md in repos that have no AGENTS.md.
+project_doc_fallback_filenames = ["CLAUDE.md"]
+# Desktop notification when a turn finishes (no-op on Ona).
+notify = ["@HOME@/.local/bin/agent-notify", "Codex"]

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Desktop notification for Claude Code hooks and Codex `notify`.
+#   agent-notify TITLE [MESSAGE]
+# Codex appends its event JSON as the last argument; that becomes "Finished".
+# Shows the current folder so you know which session it was. Does nothing
+# where there's no desktop (Ona), and never fails the caller.
+# Linked to ~/.local/bin/agent-notify.
+
+title="${1:-Agent}"
+message="${2:-Needs your attention}"
+case "$message" in "{"*) message="Finished" ;; esac
+subtitle="${PWD##*/}"
+
+if command -v osascript &>/dev/null; then
+    osascript - "$title" "$message" "$subtitle" <<'EOF' &>/dev/null
+on run argv
+    display notification (item 2 of argv) with title (item 1 of argv) subtitle (item 3 of argv)
+end run
+EOF
+elif command -v notify-send &>/dev/null && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+    notify-send "$title" "$message ($subtitle)" &>/dev/null
+fi
+exit 0
