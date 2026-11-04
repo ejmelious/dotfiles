@@ -95,7 +95,8 @@ status: in_progress                  # in_progress | complete
 signed_off: false                    # set to true after Phase 6
 signed_off_date: null                # ISO date when Phase 6 signs off
 milestones: []                       # filled by Phase 2; dependency-ordered
-open_decisions: []                   # filled across phases; non-blocking + deferred items
+open_decisions: []                   # filled across phases; each entry: {summary, blocking: true|false}
+                                     # blocking: true = the executor must not run until a human settles it
 out_of_scope_findings: []            # optional — security/hygiene issues surfaced but not in scope
 ```
 

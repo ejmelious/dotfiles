@@ -25,7 +25,7 @@ Plan selection happens *before* the run goes heads-down, so asking the user here
 Before doing anything, read the selected feature's manifest entry and refuse to proceed unless all hold — refusing here is the point of the contract:
 - `.ai-dev/implementation-plan/manifest.yaml` exists, parses, and has exactly one entry whose `folder` is the selected `<feature-slug>`.
 - `signed_off: true` **and** `status: complete`. A plan that isn't signed off (Phase 6 didn't bless it) or isn't complete is **not executable** — stop and report why. Executing an unfinished or blocked plan is exactly the failure this skill exists to prevent.
-- `open_decisions: 0`. Unresolved open decisions mean humans still owe the plan a call; don't paper over them by executing anyway.
+- No entry in `open_decisions` is blocking. An entry with `blocking: true`, or with no `blocking` field, means humans still owe the plan a call; don't paper over it by executing anyway. Entries with `blocking: false` are deferred items: list them in the run summary and proceed.
 - `target_repo` matches the repo this is being run against. On mismatch, stop and ask — the plan may belong to a different codebase.
 
 ### Confirm before going autonomous
