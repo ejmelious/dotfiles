@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Checks that this machine is set up: tools, sign-ins, dotfiles links, and on
+# Ona, EFS. Prints only pass/fail, never secret values. Exit code is the
+# number of failures. Linked to ~/.local/bin/dotfiles-doctor.
+set -uo pipefail
+
+# Follow the ~/.local/bin link back to the repo.
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+    target="$(readlink "$src")"
+    case "$target" in /*) src="$target" ;; *) src="$(dirname "$src")/$target" ;; esac
+done
+DOTFILES="$(cd "$(dirname "$src")/.." && pwd)"
+failures=0
+
+if [ -t 1 ]; then g=$'\033[32m' r=$'\033[31m' y=$'\033[33m' n=$'\033[0m'; else g='' r='' y='' n=''; fi
+pass() { printf '  %s✓%s %s\n' "$g" "$n" "$1"; }
+fail() { printf '  %s✗%s %s\n' "$r" "$n" "$1"; failures=$((failures + 1)); }
+note() { printf '  %s-%s %s\n' "$y" "$n" "$1"; }
+section() { printf '\n%s\n' "$1"; }
+
+check_link() { # path target label
+    if [ -L "$1" ] && [ "$(readlink "$1")" = "$2" ]; then pass "$3"; else fail "$3 (${1/#"$HOME"/\~} not linked)"; fi
+}
+
+section "Tools"
+for tool in git jq gh claude codex acli zsh; do
+    if command -v "$tool" &>/dev/null; then pass "$tool"; else fail "$tool not found"; fi
+done
+
+# git/config uses merge.conflictStyle=zdiff3, which older git rejects.
+if command -v git &>/dev/null; then
+    gv="$(git --version | sed -E 's/[^0-9]*([0-9]+)\.([0-9]+).*/\1 \2/')"
+    read -r gmaj gmin <<<"$gv"
+    if [ "$gmaj" -gt 2 ] || { [ "$gmaj" -eq 2 ] && [ "$gmin" -ge 35 ]; }; then
+        pass "git $gmaj.$gmin is 2.35+ (needed for zdiff3 conflicts)"
+    else
+        fail "git $gmaj.$gmin is older than 2.35; merges will reject merge.conflictStyle=zdiff3"
+    fi
+fi
+
+section "Sign-ins"
+if command -v gh &>/dev/null; then
+    if gh auth status &>/dev/null; then pass "gh auth status"; else fail "gh not signed in (run: gh auth login)"; fi
+fi
+if command -v acli &>/dev/null; then
+    if acli jira auth status &>/dev/null; then pass "acli jira auth status"
+    elif [ -z "${JIRA_API_TOKEN:-}" ]; then fail "acli not signed in; JIRA_API_TOKEN secret not set"
+    else fail "acli not signed in; re-run ~/dotfiles/install.sh or check JIRA_EMAIL"; fi
+fi
+note "Claude and Codex sign in interactively: run claude / codex and use SSO"
+
+section "Dotfiles"
+check_link "$HOME/.agents/AGENTS.md" "$DOTFILES/agents/AGENTS.md" "shared AGENTS.md"
+check_link "$HOME/.codex/AGENTS.md" "$HOME/.agents/AGENTS.md" "Codex AGENTS.md"
+check_link "$HOME/.zshrc" "$DOTFILES/zsh/.zshrc" ".zshrc"
+check_link "$HOME/.config/git/config" "$DOTFILES/git/config" "git config"
+check_link "$HOME/.local/bin/agent-notify" "$DOTFILES/bin/agent-notify" "agent-notify"
+claude_dirs_file="$HOME/.config/dotfiles/claude-dirs"
+if [ -f "$claude_dirs_file" ]; then
+    claude_dirs="$(sed -e 's/#.*//' -e "s|^~|$HOME|" "$claude_dirs_file" | tr -s '[:space:]' ' ')"
+else
+    claude_dirs="$HOME/.claude"
+fi
+for dir in $claude_dirs; do
+    [ -d "$dir" ] || continue
+    label="${dir/#"$HOME"/\~}"
+    check_link "$dir/CLAUDE.md" "$DOTFILES/claude/CLAUDE.md" "$label/CLAUDE.md"
+    if jq -e '.hooks.PreToolUse // [] | map(.hooks[].command) | any(test("guard-bash"))' "$dir/settings.json" &>/dev/null; then
+        pass "$label settings include the guard hook"
+    else
+        fail "$label settings missing the guard hook (re-run install.sh)"
+    fi
+done
+if [ -f "$HOME/.codex/config.toml" ] && grep -q '^forced_login_method' "$HOME/.codex/config.toml"; then
+    pass "Codex limited to ChatGPT sign-in"
+else
+    fail "Codex config missing forced_login_method (re-run install.sh)"
+fi
+
+if [ "${IS_ON_ONA:-}" = "true" ]; then
+    section "Ona"
+    check_link "$HOME/.config/git/config.ona" "$DOTFILES/git/ona.gitconfig" "Ona git settings"
+    if [ -n "${USE_EFS_HOME:-}" ]; then fail "legacy USE_EFS_HOME secret is set; remove it from Ona secrets"; fi
+    efs="${EFS_MOUNT_POINT:-}"
+    if [ -z "$efs" ]; then
+        note "EFS_MOUNT_POINT not set; logins won't carry between environments"
+    elif ! mountpoint -q "$efs" 2>/dev/null; then
+        fail "EFS not mounted at $efs"
+    else
+        pass "EFS mounted at $efs"
+        check_link "$HOME/.codex/auth.json" "$efs/.codex/auth.json" "Codex login shared via EFS"
+        check_link "$HOME/.config/gh" "$efs/.config/gh" "gh config shared via EFS"
+        note "To confirm reuse, open a second environment in the same region and run this again"
+    fi
+fi
+
+echo
+if [ "$failures" -eq 0 ]; then echo "All checks passed."; else echo "$failures check(s) failed."; fi
+exit "$failures"

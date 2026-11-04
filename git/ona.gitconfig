@@ -1,0 +1,20 @@
+# Ona only: linked to ~/.config/git/config.ona by install.sh when
+# IS_ON_ONA=true, and included from git/config (a missing include is ignored).
+
+# Large-repo speedups (obsidian): index v4 + untracked cache, parallel checkout,
+# and no fetching every tag on each fetch.
+[feature]
+	manyFiles = true
+[checkout]
+	workers = 8
+[fetch]
+	tagOpt = --no-tags
+
+# Use gh's login (GH_TOKEN, or ~/.config/gh shared via EFS) for git over HTTPS.
+# The empty helper clears any helper set earlier.
+[credential "https://github.com"]
+	helper =
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !gh auth git-credential

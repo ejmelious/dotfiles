@@ -1,0 +1,6 @@
+.DS_Store
+**/.claude/settings.local.json
+.env
+.env.local
+# Agent scratch space: plans, notes, research. See ~/.agents/AGENTS.md.
+.ai-dev/

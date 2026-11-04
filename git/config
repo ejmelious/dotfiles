@@ -1,0 +1,49 @@
+# Linked to ~/.config/git/config. If ~/.gitconfig exists it is read after
+# this file and wins, so the laptop can keep its own identity there.
+[user]
+	name = Ethan Melious
+	email = 89801249+ejmelious@users.noreply.github.com
+[init]
+	defaultBranch = main
+# Merge, don't rebase, when pulling: Vanta squash-merges PRs and GitHub's
+# "Update branch" merges, so rebasing only forces force-pushes.
+[pull]
+	rebase = false
+[push]
+	autoSetupRemote = true
+[fetch]
+	prune = true
+[rerere]
+	enabled = true
+# Mostly from "How Core Git Developers Configure Git" (blog.gitbutler.com).
+# zdiff3 needs git 2.35+; dotfiles-doctor checks the version.
+[diff]
+	algorithm = histogram
+	colorMoved = default
+	colorMovedWS = allow-indentation-change
+	mnemonicPrefix = true
+	renames = true
+[merge]
+	conflictStyle = zdiff3
+[branch]
+	sort = -committerdate
+[tag]
+	sort = version:refname
+[column]
+	ui = auto
+[commit]
+	verbose = true
+[help]
+	autocorrect = prompt
+[alias]
+	s = status -sb
+	lg = log --oneline --graph --decorate -20
+	last = log -1 HEAD --stat
+	unstage = restore --staged
+	whoami = config user.email
+# Ona-only settings; the file exists only on Ona (see git/ona.gitconfig).
+[include]
+	path = ~/.config/git/config.ona
+# Per-machine settings (signing keys, work email) — never committed.
+[include]
+	path = ~/.config/git/config.local
