@@ -15,6 +15,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      # Ubuntu runners have no zsh; macOS ships it.
+      - name: Install zsh
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q zsh
       - name: Validate JSON
         run: jq empty claude/settings.json
       - name: Sandboxed install test
