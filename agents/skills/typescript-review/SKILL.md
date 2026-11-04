@@ -30,8 +30,12 @@ Work out what "the work" is, in this order:
   and `gh pr diff <n>`. Check out its head branch locally if you aren't on it
   (ask first if the working tree has uncommitted changes — don't stash or
   discard someone's work).
-- A branch → diff against its merge base with the default branch
-  (`git diff $(git merge-base HEAD origin/main)...HEAD`).
+- A branch → diff against its merge base with the base branch:
+  `git diff <base>...HEAD`. Use the base the user named ("against
+  `develop`"); otherwise the default branch, from
+  `git symbolic-ref --short refs/remotes/origin/HEAD`, then a local `main`
+  or `master`. Check the ref exists (`git rev-parse --verify <base>`)
+  before diffing — a local-only repo has no `origin/*` refs.
 - Otherwise the uncommitted working tree.
 
 Review the changed `.ts`, `.tsx`, `.mts`, `.cts` files (and `.d.ts`). Read
@@ -200,9 +204,12 @@ API that other packages or services consume, touch more than a handful of
 files, need a new dependency, or require a product decision (e.g. what
 should happen with an invalid payload). Keep the finding's severity, mark it
 "Needs engineer", and write down the fix you'd recommend. A fix that fails
-verification and can't be made to pass cleanly also goes back: revert it
-(`git restore` on the files you changed for that fix only) and mark it
-"Attempted — reverted" with what failed.
+verification and can't be made to pass cleanly also goes back: undo only
+your own edits and mark it "Attempted — reverted" with what failed. Before
+editing a file for a fix, copy it to `.ai-dev/typescript-review/backup/`,
+and revert by copying it back. Don't use `git restore` or `git checkout` for
+this: on a file with uncommitted work it throws away the user's edits too.
+If a backup is missing, ask before restoring anything.
 
 ### 7. Report
 
