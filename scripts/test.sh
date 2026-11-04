@@ -146,6 +146,11 @@ check block "git push -o ci.skip origin"
 check block "git push --push-option ci.skip origin"
 git -C "$repo" checkout -q -b feature
 check allow "git push"
+# From a feature branch, `git -C` aimed at a repo on main checks that repo.
+other="$SANDBOX/other"; git init -q -b main "$other"
+check block "git -C $other push origin"
+check block "git -C ../other push"
+check allow "git -C $other push origin my-branch"
 pass "guard-bash hook"
 
 # Status line renders.

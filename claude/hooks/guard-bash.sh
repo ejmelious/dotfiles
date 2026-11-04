@@ -32,7 +32,16 @@ while IFS= read -r seg; do
             exit 2
         fi
         # Bare `git push` / `git push origin` while on main/master.
-        branch="$(git -C "${cwd:-.}" branch --show-current 2>/dev/null || true)"
+        # `git -C <dir> push` acts on <dir>, so check that repo's branch.
+        target="${cwd:-.}"
+        dash_c_re='^git[[:space:]]+-C[[:space:]]+([^[:space:]]+)'
+        if [[ "$words" =~ $dash_c_re ]]; then
+            case "${BASH_REMATCH[1]}" in
+                /*) target="${BASH_REMATCH[1]}" ;;
+                *) target="$target/${BASH_REMATCH[1]}" ;;
+            esac
+        fi
+        branch="$(git -C "$target" branch --show-current 2>/dev/null || true)"
         if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
             # Count the non-flag arguments after `push`, wherever the flags are.
             # Two or more means remote plus refspec, which the check above has
