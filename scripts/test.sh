@@ -29,7 +29,9 @@ pass "install.sh ran"
 
 is_link_to "$HOME/.agents/AGENTS.md" "$DOTFILES/agents/AGENTS.md"
 is_link_to "$HOME/.codex/AGENTS.md" "$HOME/.agents/AGENTS.md"
-is_link_to "$HOME/.zshrc" "$DOTFILES/zsh/.zshrc"
+zshrc_stub="source \"$DOTFILES/zsh/.zshrc\""
+[ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ] && grep -qxF "$zshrc_stub" "$HOME/.zshrc" \
+    || fail "~/.zshrc is not a plain file that sources the repo .zshrc"
 is_link_to "$HOME/.config/git/config" "$DOTFILES/git/config"
 check_claude_dir() {
     local dir="$1"
@@ -112,7 +114,25 @@ codex_before="$(cat "$c")"
 [ "$codex_before" = "$(cat "$c")" ] || fail "second run changed Codex config"
 grep -q "Backed up" "$SANDBOX/run2.log" && fail "second run backed something up"
 grep -q "Linked" "$SANDBOX/run2.log" && fail "second run relinked something"
+grep -q "Wrote ~/.zshrc" "$SANDBOX/run2.log" && fail "second run rewrote ~/.zshrc"
 pass "install.sh is idempotent"
+
+# Ona's dev tooling rewrites ~/.zshrc (new file + rename) to add its own
+# blocks. Re-running install must keep those blocks and not back them up.
+{ cat "$HOME/.zshrc"; echo '# >>> dev block >>>'; } > "$SANDBOX/zshrc.new"
+mv "$SANDBOX/zshrc.new" "$HOME/.zshrc"
+"$DOTFILES/install.sh" > "$SANDBOX/run3.log" 2>&1 || { cat "$SANDBOX/run3.log"; fail "install.sh after tool rewrote .zshrc"; }
+grep -qxF '# >>> dev block >>>' "$HOME/.zshrc" || fail "re-install dropped a tool's ~/.zshrc block"
+grep -q "Backed up" "$SANDBOX/run3.log" && fail "re-install backed up a tool-edited ~/.zshrc"
+pass "tool edits to ~/.zshrc survive re-install"
+
+# Machines set up before the stub have ~/.zshrc linked to the repo.
+rm -f "$HOME/.zshrc"
+ln -s "$DOTFILES/zsh/.zshrc" "$HOME/.zshrc"
+"$DOTFILES/install.sh" > "$SANDBOX/run4.log" 2>&1 || { cat "$SANDBOX/run4.log"; fail "install.sh over old .zshrc link"; }
+[ ! -L "$HOME/.zshrc" ] && grep -qxF "$zshrc_stub" "$HOME/.zshrc" || fail "old ~/.zshrc link not replaced by the stub"
+grep -q "Backed up" "$SANDBOX/run4.log" && fail "backed up our own ~/.zshrc link"
+pass "old ~/.zshrc link migrates to the stub"
 
 # Hook behaviour.
 hook="$DOTFILES/claude/hooks/guard-bash.sh"

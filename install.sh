@@ -117,9 +117,24 @@ else
 fi
 
 # --- Shell, git, and helper commands --------------------------------------------
-for f in .zshenv .zprofile .zshrc; do
+for f in .zshenv .zprofile; do
     link "$DOTFILES/zsh/$f" "$HOME/$f"
 done
+# ~/.zshrc is a plain file that sources the repo copy, not a link: installers
+# (Ona's dev tooling among them) rewrite it to add their own blocks, which
+# replaces a link. Their blocks then stay below this line and keep working.
+zshrc_stub="source \"$DOTFILES/zsh/.zshrc\""
+if [ -L "$HOME/.zshrc" ] && [ "$(readlink "$HOME/.zshrc")" = "$DOTFILES/zsh/.zshrc" ]; then
+    rm -f "$HOME/.zshrc"
+fi
+if ! { [ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ] && grep -qxF "$zshrc_stub" "$HOME/.zshrc"; }; then
+    if [ -e "$HOME/.zshrc" ] || [ -L "$HOME/.zshrc" ]; then
+        backup "$HOME/.zshrc"
+    fi
+    printf '%s\n' "# Written by install.sh. Other tools may add lines below; keep this one." \
+        "$zshrc_stub" > "$HOME/.zshrc"
+    ok "Wrote ~/.zshrc"
+fi
 link "$DOTFILES/git/config" "$HOME/.config/git/config"
 link "$DOTFILES/git/ignore" "$HOME/.config/git/ignore"
 link "$DOTFILES/bin/dotfiles-doctor" "$HOME/.local/bin/dotfiles-doctor"

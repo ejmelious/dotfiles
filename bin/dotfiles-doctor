@@ -55,7 +55,11 @@ note "Claude and Codex sign in interactively: run claude / codex and use SSO"
 section "Dotfiles"
 check_link "$HOME/.agents/AGENTS.md" "$DOTFILES/agents/AGENTS.md" "shared AGENTS.md"
 check_link "$HOME/.codex/AGENTS.md" "$HOME/.agents/AGENTS.md" "Codex AGENTS.md"
-check_link "$HOME/.zshrc" "$DOTFILES/zsh/.zshrc" ".zshrc"
+if [ -f "$HOME/.zshrc" ] && grep -qxF "source \"$DOTFILES/zsh/.zshrc\"" "$HOME/.zshrc"; then
+    pass ".zshrc loads dotfiles"
+else
+    fail ".zshrc doesn't source $DOTFILES/zsh/.zshrc (re-run install.sh)"
+fi
 check_link "$HOME/.config/git/config" "$DOTFILES/git/config" "git config"
 check_link "$HOME/.local/bin/agent-notify" "$DOTFILES/bin/agent-notify" "agent-notify"
 claude_dirs_file="$HOME/.config/dotfiles/claude-dirs"
