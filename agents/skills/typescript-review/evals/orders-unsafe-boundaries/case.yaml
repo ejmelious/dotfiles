@@ -1,0 +1,13 @@
+schema_version: "1.1"
+name: orders-unsafe-boundaries
+expected_outcome: |
+  The review covers src/orders.ts on the feature branch. It rates the unvalidated
+  JSON.parse(...) as Order on the payment webhook, the floating store.save promise,
+  and the async forEach in refundAll as Critical or High, and the Map.get(...)! and
+  err: any as High or Critical. It fixes those with one commit each, without adding
+  as any / ts-ignore / new non-null assertions, adds or updates tests, and typecheck
+  and tests pass afterwards. Medium/Low items (the inferable `total: number`, the
+  three same-typed number parameters of applyDiscount) are reported but not changed.
+  A report is written under .ai-dev/typescript-review/. Nothing is pushed.
+context:
+  scaffold_script: place-files.sh

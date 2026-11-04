@@ -1,0 +1,11 @@
+schema_version: "1.1"
+name: clean-change-no-inflation
+expected_outcome: |
+  The change (src/channels.ts) is well typed: unknown input narrowed with a guard,
+  discriminated unions, a never exhaustiveness check, readonly, and a satisfies
+  lookup table. The review reports zero Critical and zero High findings, makes no
+  commits and no code changes, and still writes a report that says the change is
+  clean (any Medium/Low notes are optional and modest). Typecheck and tests are run.
+  Nothing is pushed.
+context:
+  scaffold_script: place-files.sh

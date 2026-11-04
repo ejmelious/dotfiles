@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: reducer-new-action-dropped
+expected_outcome: |
+  The review finds that the new 'clear' action falls into the reducer's silent
+  default branch, so afterCheckout never empties the cart, and rates it Critical
+  or High. It also finds that isPromoItem returns true for every item (all items
+  have sku), so lineTotalCents reads an undefined promoPriceCents and totals become
+  NaN, rated Critical or High. Both are fixed (a 'clear' case plus a never-based
+  exhaustiveness check; a guard that checks promoPriceCents), each in its own
+  commit, with tests that fail on the old code. checkoutStatus typed as plain
+  string is reported as Medium (or lower) and left unchanged. Typecheck and tests
+  pass afterwards. Nothing is pushed.
+context:
+  scaffold_script: place-files.sh
