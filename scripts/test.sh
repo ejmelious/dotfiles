@@ -30,8 +30,9 @@ pass "install.sh ran"
 is_link_to "$HOME/.agents/AGENTS.md" "$DOTFILES/agents/AGENTS.md"
 is_link_to "$HOME/.codex/AGENTS.md" "$HOME/.agents/AGENTS.md"
 zshrc_stub="source \"$DOTFILES/zsh/.zshrc\""
-[ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ] && grep -qxF "$zshrc_stub" "$HOME/.zshrc" \
-    || fail "~/.zshrc is not a plain file that sources the repo .zshrc"
+if ! { [ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ] && grep -qxF "$zshrc_stub" "$HOME/.zshrc"; }; then
+    fail "$HOME/.zshrc is not a plain file that sources the repo .zshrc"
+fi
 is_link_to "$HOME/.config/git/config" "$DOTFILES/git/config"
 check_claude_dir() {
     local dir="$1"
@@ -130,7 +131,9 @@ pass "tool edits to ~/.zshrc survive re-install"
 rm -f "$HOME/.zshrc"
 ln -s "$DOTFILES/zsh/.zshrc" "$HOME/.zshrc"
 "$DOTFILES/install.sh" > "$SANDBOX/run4.log" 2>&1 || { cat "$SANDBOX/run4.log"; fail "install.sh over old .zshrc link"; }
-[ ! -L "$HOME/.zshrc" ] && grep -qxF "$zshrc_stub" "$HOME/.zshrc" || fail "old ~/.zshrc link not replaced by the stub"
+if [ -L "$HOME/.zshrc" ] || ! grep -qxF "$zshrc_stub" "$HOME/.zshrc"; then
+    fail "old ~/.zshrc link not replaced by the stub"
+fi
 grep -q "Backed up" "$SANDBOX/run4.log" && fail "backed up our own ~/.zshrc link"
 pass "old ~/.zshrc link migrates to the stub"
 
