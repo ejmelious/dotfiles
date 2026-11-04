@@ -14,7 +14,7 @@ This governs all three stages. With no human in the loop, these controls are wha
 
 ## Progress ledger
 
-A single source of truth at `docs/implementation-plan/<feature-slug>/.execution/ledger.md`. Update it at every state change — it is what makes the run resumable and auditable.
+A single source of truth at `.ai-dev/implementation-plan/<feature-slug>/.execution/ledger.md`. Update it at every state change — it is what makes the run resumable and auditable.
 
 Track:
 - `baseline_commit` and the recorded `baseline_failure_set`
@@ -58,7 +58,7 @@ A clean repo at the last green commit is what makes the hard-stop safe: the huma
 
 ## Report formats
 
-### Escalation report — `docs/implementation-plan/<feature-slug>/.execution/escalation-report.md`
+### Escalation report — `.ai-dev/implementation-plan/<feature-slug>/.execution/escalation-report.md`
 ```markdown
 # Escalation Report — <feature>
 ## Where it stopped — milestone N, task <id>
@@ -71,7 +71,7 @@ A clean repo at the last green commit is what makes the hard-stop safe: the huma
 ## Recommended human actions — specific next steps (e.g. re-plan milestone N, fix env, adjust contract)
 ```
 
-### Final implementation report — `docs/implementation-plan/<feature-slug>/.execution/implementation-report.md`
+### Final implementation report — `.ai-dev/implementation-plan/<feature-slug>/.execution/implementation-report.md`
 ```markdown
 # Implementation Report — <feature>
 ## Summary — milestones completed, total commits, suite status

@@ -41,7 +41,7 @@ Run these checks before anything else. If any fail, stop and report to the user.
 5. **Detect codegen.** Note any of: `__generated__/`, `*.gen.{ts,tsx}`, `codegen.{yml,yaml,ts}`, Prisma `schema.prisma`, `openapi-typescript`, files whose first non-empty line contains "DO NOT EDIT" or "AUTO-GENERATED". These are **never deleted or edited by this skill** — they regenerate.
 6. **Check tool availability.** Verify `knip` and `depcheck` are installable. Prefer the repo's existing versions if present in `devDependencies`; otherwise use `npx -y knip@5` and `npx -y depcheck@1`. If knip refuses to run for any reason, fall back to `ts-prune` and note the reduced confidence in the report.
 
-Write a short summary of the pre-flight findings to `.dead-code-report/00-preflight.md`. Include framework, entrypoints, monorepo layout, codegen directories, and tool versions in use.
+Write a short summary of the pre-flight findings to `.ai-dev/dead-code-report/00-preflight.md`. Include framework, entrypoints, monorepo layout, codegen directories, and tool versions in use.
 
 ---
 
@@ -49,14 +49,14 @@ Write a short summary of the pre-flight findings to `.dead-code-report/00-prefli
 
 Goal: produce a complete inventory of *suspected* dead code, classified by confidence and grouped by hypothesis. **Do not delete anything in this phase.**
 
-Run these passes. Each writes a report file under `.dead-code-report/`.
+Run these passes. Each writes a report file under `.ai-dev/dead-code-report/`.
 
 ### 1a. Unused exports, files, and dependencies — via knip
 
 Generate a `knip.json` if none exists, seeded with the entrypoints detected in Phase 0. Run:
 
 ```bash
-npx knip --reporter json > .dead-code-report/raw/knip.json
+npx knip --reporter json > .ai-dev/dead-code-report/raw/knip.json
 ```
 
 Knip output covers: unused files, unused exports, unused exported types, unused dependencies, unlisted dependencies (phantom deps), unused devDependencies, unused binaries, unused class members, duplicate exports. Parse it.
@@ -66,7 +66,7 @@ Knip output covers: unused files, unused exports, unused exported types, unused 
 Knip and depcheck disagree often; treat *intersection* as high-confidence and *union minus intersection* as lower confidence.
 
 ```bash
-npx depcheck --json > .dead-code-report/raw/depcheck.json
+npx depcheck --json > .ai-dev/dead-code-report/raw/depcheck.json
 ```
 
 ### 1c. ESLint unused symbols (within-file)
@@ -75,14 +75,14 @@ Many repos already have `@typescript-eslint/no-unused-vars` configured. If so, r
 
 ```bash
 npx eslint . --format json --rule '{"@typescript-eslint/no-unused-vars": "warn"}' \
-  --no-error-on-unmatched-pattern > .dead-code-report/raw/eslint-unused.json || true
+  --no-error-on-unmatched-pattern > .ai-dev/dead-code-report/raw/eslint-unused.json || true
 ```
 
 These are intra-file unused locals, parameters, imports — generally safe, low-stakes findings.
 
 ### 1d. Assets
 
-Tools above don't cover `public/`, `src/assets/`, fonts, images, JSON config files. For each asset file, grep for references across `.ts`, `.tsx`, `.js`, `.jsx`, `.css`, `.scss`, `.html`, `.md`, `.json` using both the basename and the path-from-public-root. Be careful: Next.js public assets are referenced as `/foo.png`, not `public/foo.png`. Write candidates to `.dead-code-report/raw/assets.json`. Default classification for assets is "suspicious" — file references are easy to miss.
+Tools above don't cover `public/`, `src/assets/`, fonts, images, JSON config files. For each asset file, grep for references across `.ts`, `.tsx`, `.js`, `.jsx`, `.css`, `.scss`, `.html`, `.md`, `.json` using both the basename and the path-from-public-root. Be careful: Next.js public assets are referenced as `/foo.png`, not `public/foo.png`. Write candidates to `.ai-dev/dead-code-report/raw/assets.json`. Default classification for assets is "suspicious" — file references are easy to miss.
 
 ### 1e. React-specific passes
 
@@ -96,7 +96,7 @@ Static analyzers miss these, so do them explicitly:
 - **CSS Modules**: `import styles from './x.module.css'` — every CSS class declared in the file but not referenced via `styles.foo` in TS is dead. Conservative: only flag when *all* classes in a CSS Module are unused.
 - **Tailwind safelist conflicts**: if `tailwind.config.{js,ts}` has a `safelist`, those classes are intentionally kept; don't flag.
 
-Write results to `.dead-code-report/raw/react.json`.
+Write results to `.ai-dev/dead-code-report/raw/react.json`.
 
 ### 1f. Dynamic-reference scan (de-risks every other finding)
 
@@ -156,7 +156,7 @@ In the final report, *do not* present a flat list. Group findings as:
 
 ## Phase 2 — Report
 
-Write a single human-facing summary to `.dead-code-report/SUMMARY.md`. Structure:
+Write a single human-facing summary to `.ai-dev/dead-code-report/SUMMARY.md`. Structure:
 
 ```markdown
 # Dead Code Audit — <date>
@@ -241,7 +241,7 @@ Never, under any circumstance, in this phase:
 
 ## Phase 4 — Post-cleanup report
 
-Write `.dead-code-report/RESULT.md`:
+Write `.ai-dev/dead-code-report/RESULT.md`:
 
 - Batches attempted, batches landed, batches reverted (with reason).
 - Before/after LOC (`git ls-files | xargs wc -l`).
@@ -271,7 +271,7 @@ If the file doesn't exist and the user wants exemptions, offer to create one wit
 
 Always end with:
 
-1. Path to `.dead-code-report/SUMMARY.md` (and `RESULT.md` if cleanup ran).
+1. Path to `.ai-dev/dead-code-report/SUMMARY.md` (and `RESULT.md` if cleanup ran).
 2. Branch name (if cleanup ran).
 3. The one-liner the user needs to roll back everything: `git checkout <previous-branch> && git branch -D <cleanup-branch>`.
 4. A short note on what *was not* touched and why — suspicious findings, dynamic-reference risks, public API. The director of engineering wants to know the surface area of remaining debt, not just what got cleaned.

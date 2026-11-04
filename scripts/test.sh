@@ -144,8 +144,24 @@ check block "git push origin --delete main"
 # A flag's value isn't a branch name, so this is still a bare push of main.
 check block "git push -o ci.skip origin"
 check block "git push --push-option ci.skip origin"
+# The shell strips quotes around a -C path before git sees it.
+check block 'git -C "." push'
+check block "git -C '$repo' push origin"
+check allow "git -C \"$repo\" push origin my-branch"
 git -C "$repo" checkout -q -b feature
 check allow "git push"
+# From a feature branch, `git -C` aimed at a repo on main checks that repo.
+other="$SANDBOX/other"; git init -q -b main "$other"
+check block "git -C $other push origin"
+check block "git -C ../other push"
+check allow "git -C $other push origin my-branch"
+# "push" inside the -C path isn't the subcommand.
+pushrepo="$SANDBOX/push-repo"; git init -q -b main "$pushrepo"
+check block "git -C $pushrepo push origin"
+# A -C path the hook can't resolve (spaces, variables) fails closed.
+# shellcheck disable=SC2016 # a literal, unexpanded variable on purpose
+check block 'git -C "$SOME_REPO" push origin'
+check block "git -C \"$SANDBOX/no such dir\" push origin"
 pass "guard-bash hook"
 
 # Status line renders.
