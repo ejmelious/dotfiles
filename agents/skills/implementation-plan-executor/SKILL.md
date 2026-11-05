@@ -11,7 +11,7 @@ This is the companion to `implementation-plan-builder`. The builder produces the
 
 ## Inputs
 
-1. **The implementation plan** — a feature-slug folder under `.ai-dev/implementation-plan/<feature-slug>/`, produced by `implementation-plan-builder`, holding the per-milestone eng specs, execution plans, and test plans. The handoff contract (identity, milestone list, sign-off status) is the builder's shared `.ai-dev/implementation-plan/manifest.yaml`, one level up. It is either a single feature entry or, once a second plan exists, a top-level `features:` list; use the entry whose `folder` matches the selected `<feature-slug>`. **All other context for the run lives in the feature folder** — reference it throughout.
+1. **The implementation plan** — a feature-slug folder under `.ai-dev/implementation-plan/<feature-slug>/`, produced by `implementation-plan-builder`, holding the per-milestone eng specs (design, tasks, acceptance criteria, commit plan) and test plans. The handoff contract (identity, milestone list, sign-off status) is the builder's shared `.ai-dev/implementation-plan/manifest.yaml`, one level up. It is either a single feature entry or, once a second plan exists, a top-level `features:` list; use the entry whose `folder` matches the selected `<feature-slug>`. **All other context for the run lives in the feature folder** — reference it throughout.
 2. **The codebase** — the current working repository.
 
 ### Selecting the plan (before the autonomous run)
@@ -24,7 +24,7 @@ Plan selection happens *before* the run goes heads-down, so asking the user here
 ### Verifying the plan is safe to execute
 Before doing anything, read the selected feature's manifest entry and refuse to proceed unless all hold — refusing here is the point of the contract:
 - `.ai-dev/implementation-plan/manifest.yaml` exists, parses, and has exactly one entry whose `folder` is the selected `<feature-slug>`.
-- `signed_off: true` **and** `status: complete`. A plan that isn't signed off (Phase 6 didn't bless it) or isn't complete is **not executable** — stop and report why. Executing an unfinished or blocked plan is exactly the failure this skill exists to prevent.
+- `signed_off: true` **and** `status: complete`. A plan that isn't signed off (Phase 5 didn't bless it) or isn't complete is **not executable** — stop and report why. Executing an unfinished or blocked plan is exactly the failure this skill exists to prevent.
 - No entry in `open_decisions` is blocking. An entry with `blocking: true`, or with no `blocking` field, means humans still owe the plan a call; don't paper over it by executing anyway. Entries with `blocking: false` are deferred items: list them in the run summary and proceed.
 - `target_repo` matches the repo this is being run against. On mismatch, stop and ask — the plan may belong to a different codebase.
 
@@ -46,7 +46,7 @@ Five principles drive every design choice. When in doubt, resolve toward these.
 
 1. **The plan is a hypothesis; the codebase is the truth.** The plan was written earlier and the repo has moved. Reconcile plan against current code at startup and at each milestone pre-flight. Minor drift → adapt and note it. Major drift (the plan's premises no longer hold) → there is no human to re-plan mid-run, so **hard-stop and escalate** rather than improvise a large deviation.
 2. **Stay green.** Establish a known baseline before touching anything; verify every increment; never advance on red. A change that introduces a new failure is not done.
-3. **"Done" is acceptance criteria met + tests passing — never "looks done."** Phase 4 gave every task acceptance criteria; Phase 5 gave the test plan. Treat those as the literal, machine-checkable definition of done. This is what makes self-validation trustworthy instead of self-congratulatory.
+3. **"Done" is acceptance criteria met + tests passing — never "looks done."** Phase 3's eng spec gave every task acceptance criteria; Phase 4 gave the test plan. Treat those as the literal, machine-checkable definition of done. This is what makes self-validation trustworthy instead of self-congratulatory.
 4. **Bounded self-correction with a safe failure mode.** Self-correct within an explicit budget. "Move on to the next milestone" never means "move on past red" — if a milestone can't reach green within budget, advancing would compound the corruption through every downstream milestone, so the run **hard-stops** instead.
 5. **Resumable.** Long runs get interrupted. A progress ledger in the repo records exactly where it is, so a resumed run continues without redoing or double-applying work.
 
@@ -65,7 +65,7 @@ The **control spine** (`references/verification-ledger-escalation.md`) defines v
 ## Output & boundaries
 
 The executor works on a dedicated branch and writes everything inside the plan's own folder, so the plan and its execution record stay together:
-- **Code + commits** — per the milestone's PR strategy (Phase 4).
+- **Code + commits** — per the milestone's commit plan (eng spec, Phase 3).
 - **The ledger** — `.ai-dev/implementation-plan/<feature-slug>/.execution/ledger.md` (progress, baseline, last green commit).
 - **Reports** — `.ai-dev/implementation-plan/<feature-slug>/.execution/` (final report on success, escalation report on hard-stop).
 

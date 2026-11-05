@@ -1,6 +1,6 @@
 # Stage 2 — End-to-End Validation (once)
 
-Reached only when every milestone is `done`. This is the executor's final proof that the whole plan is implemented and coherent — the mirror of the planning skill's Phase 6.
+Reached only when every milestone is `done`. This is the executor's final proof that the whole plan is implemented and coherent — the mirror of the planning skill's Phase 5.
 
 ## 1. Full-suite green
 Run the complete toolchain one final time on the integrated result. The invariant holds: no new failures beyond the recorded baseline set. If anything is red here, it's a regression that slipped through — treat as unrecoverable and hard-stop with an escalation report rather than declaring success on red.

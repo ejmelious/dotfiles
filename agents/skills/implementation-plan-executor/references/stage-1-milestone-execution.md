@@ -6,12 +6,12 @@ Work through the milestones in **dependency order**. Each milestone is fully aut
 
 ### 1. Pre-flight
 - Mark the milestone `in_progress` in the ledger; record its start commit.
-- Re-read this milestone's eng spec (Phase 3), execution plan / task list (Phase 4), and test plan (Phase 5).
+- Re-read this milestone's eng spec with its task list (Phase 3) and test plan (Phase 4).
 - **Reconcile against current code again.** Earlier milestones just changed the repo, so this milestone's assumptions may have shifted since the plan — or since Stage 0. Minor drift → adapt and note. Major drift → hard-stop and escalate.
 - Confirm the repo is at `last_green_commit` and green before starting work.
 
 ### 2. Execute
-Run the **per-task cycle** from `execution-loop.md` for every story/task, in the execution plan's order: test-first → implement → verify → bounded self-correct → confirm acceptance criteria → commit → ledger.
+Run the **per-task cycle** from `execution-loop.md` for every story/task, in the eng spec's task order: test-first → implement → verify → bounded self-correct → confirm acceptance criteria → commit → ledger.
 
 ### 3. Review gate
 Run the **per-milestone independent review gate** from `execution-loop.md` (fresh-context subagent, full suite, acceptance criteria, architecture conformance, no regressions).

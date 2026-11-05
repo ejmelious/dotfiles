@@ -1,92 +1,83 @@
-# Phase 1 — Requirements Consumption & Breakdown
+# Phase 1 — Requirements & Architecture
 
-**Goal:** turn the raw PRD + codebase into three defensible artifacts: a **Refined PRD**, a **System Impact Analysis**, and a **Holistic Architecture Plan** — the overarching system architecture every milestone is later validated against.
+**Goal:** turn the raw PRD + codebase into two defensible artifacts: a **Refined PRD** and a **Holistic Architecture Plan** — the overarching architecture every milestone is later validated against. Then run simplification gate **G1**.
 
-**Read `references/loop-process.md` first** — this file only defines Phase 1's personas, their inputs/outputs, and the output templates. The mechanics (independence, synthesis, conflict handling, traceability) live there.
+**Read `references/loop-process.md` first** — this file only defines Phase 1's personas and output templates.
 
-**Input packet:** the raw PRD + the codebase. (No prior-phase artifacts — this is the first phase.) Loops 2 and 3 also receive the prior loop's output.
+**Input packet:** the raw PRD + the codebase. Loops 2 and 3 also receive the prior loops' output.
 
 ---
 
 ## Loop 1 — Staff Product Manager (Author)
 
-**Mandate:** review the PRD as a staff PM would, examining the requirements *against what actually exists in the codebase*.
+**Mandate:** review the PRD as a staff PM would, against what actually exists in the codebase, and sharpen it — including cutting.
 
 **Do:**
-- Verify the requirements make sense and are internally consistent.
-- Hunt for unaddressed edge cases, ambiguous acceptance criteria, and missing non-functional requirements (auth, permissions, data sensitivity, scale, audit, error states).
-- Assess whether each request fits well with the existing product and the solution it implies — flag requirements that fight the grain of the system.
-- Make concrete recommendations for improvement: clarify, split, re-scope, sequence, or cut.
+- Verify the requirements are internally consistent and fit the existing product; flag requirements that fight the grain of the system.
+- Tighten ambiguous acceptance criteria and surface edge cases the stated requirements actually hit.
+- Recommend clarify / split / re-scope / sequence / **cut**. Cutting or narrowing is as valuable as clarifying.
+- **Keep what the PRD asks for separate from what you'd add.** Add a non-functional (auth, permissions, audit, scale, error states) to a requirement only when the requirement is broken or unsafe without it. Everything else goes under "Proposed additions" with a one-line reason, not into the requirements.
 
-**Produces — the Refined PRD (first draft):** the original requirements, restructured and sharpened, with edge cases surfaced, acceptance criteria tightened, ambiguities resolved or flagged, and a recommendations section. Save reasoning to `.loops/loop-1-staff-pm.md` and the draft artifact to `refined-prd.md`.
+**Produces — Refined PRD (first draft).** Save reasoning to `.loops/loop-1-staff-pm.md` and the draft to `refined-prd.md`.
 
 ---
 
 ## Loop 2 — Senior Engineer (Ground)
 
-**Mandate:** assess the refined PRD as the Sr. engineer who will implement the system *as a whole*. Build a strong, concrete understanding of the impact these requirements have on the system.
+**Mandate:** assess the refined PRD as the engineer who will implement the system as a whole. Build a concrete understanding of its impact on the codebase.
 
 **Do:**
-- Do a real codebase-impact assessment — read the relevant code, don't theorize.
-- Identify where existing components can be leveraged (name them: file, module, class, route).
-- Identify where new classes, components, routes, paths, services, or data are genuinely needed — and why existing ones won't do.
-- Map blast radius: which surfaces, data flows, and contracts the requirements touch.
-- Critique the refined PRD wherever it's infeasible, underspecified for implementation, or naive about the system.
+- Do a real codebase-impact assessment — read the code, don't theorize.
+- Identify existing components to leverage (file, module, symbol) — reuse is the default.
+- Identify where something genuinely new is needed, and why the closest existing thing won't do.
+- Map blast radius: surfaces, data flows, and contracts touched.
+- Critique the refined PRD where it's infeasible, underspecified, or naive about the system.
 
-**Produces — the System Impact Analysis (first draft):** a high-level overview of the system impact and how the requirements can be implemented into the system — reuse vs. net-new, touched surfaces, data/contract changes, risks. Plus a critique of the refined PRD. Save to `.loops/loop-2-sr-engineer.md` and `system-impact-analysis.md`. Feed accepted PRD critiques back into `refined-prd.md` at synthesis.
+**Produces — System Impact Analysis + PRD critique**, both in `.loops/loop-2-sr-engineer.md`. The impact analysis is a working document for Loop 3, not a final artifact; its conclusions land in `holistic-architecture.md`.
 
 ---
 
 ## Loop 3 — Architect (Pressure-test)
 
-**Mandate:** review the requirements *and* the Sr. engineer's system impact analysis from an architect's perspective. Assess the whole system and pressure-test both.
+**Mandate:** pressure-test the refined PRD and Loop 2's impact analysis from an architect's perspective, and decide the holistic architecture.
 
 **Do:**
-- Judge the design end to end: properly designed, or not? Do we make **surgical modifications**, or must we introduce **brand-new components and surface area**? Justify the call.
-- Pressure-test both the requirements (Loop 1) and the system impact analysis (Loop 2) — audit Loop 2's grounding for gaps, anchoring, or convenient assumptions.
-- Think holistically: does this meet best-in-class standards for a well-architected system — including **DRY**? Where is duplication being introduced, and can it be avoided?
-- **Safety sanity check (lightweight, not a deep security review):** scan the architecture for blatant unsafe practices — e.g. obvious data exposure, missing auth/permission boundaries, secrets handled in the clear. Flag them; don't conduct a formal threat model.
-- Decide the holistic architecture: components and their responsibilities, boundaries and contracts, what's reused vs. introduced, key tradeoffs, and the decisions left open.
+- Decide: **surgical modification** or **new components and surface area**? Default to surgical; justify every new component against extending the closest existing one.
+- Audit Loop 2's grounding for gaps, anchoring, or convenient assumptions.
+- Identify duplication being introduced and how to avoid it.
+- **Name what's over-built and what's under-built** — in the PRD's "Proposed additions" and Loop 2's proposed design: what has no concrete need behind it, and which needs (requirements, codebase constraints, failure modes) nothing yet serves.
+- **Safety sanity check (lightweight, the only one in the pipeline):** flag blatant unsafe practices — obvious data exposure, missing auth/permission boundaries, secrets in the clear. Not a threat model.
 
-**Produces — the Holistic Architecture Plan (first draft):** the system architecture for the feature — components and responsibilities, boundaries/contracts, reuse-vs-net-new decisions with justification, DRY assessment, a safety sanity-check note, key tradeoffs, and open decisions. Plus a verdict (ship / revise / escalate) on Phase 1 as a whole. This is the **overarching architecture** every milestone's Phase 3 review validates against. Save to `.loops/loop-3-architect.md` and `holistic-architecture.md`.
+**Produces — Holistic Architecture Plan (first draft)** + verdict on Phase 1. Save to `.loops/loop-3-architect.md` and `holistic-architecture.md`.
 
 ---
 
 ## Synthesis — Phase 1 outputs
 
-Fold the loops together into three clean final artifacts. Name any unresolved tension (e.g. PM intent vs. engineering feasibility, or surgical vs. net-new) as an open decision rather than resolving it silently. Update `00-index.md`.
+Fold the loops into two clean final artifacts, applying the synthesis rules in `loop-process.md`. Name unresolved tensions as open decisions. Update `00-index.md`. Then run **G1** (`simplification-gate.md`) and apply its accepted cuts before Phase 2.
 
 ### `refined-prd.md`
 ```markdown
 # Refined PRD — <feature>
 ## Summary
 ## Requirements (refined)
-  - <requirement> — acceptance criteria, edge cases, non-functionals
+  - <requirement> — acceptance criteria, edge cases, non-functionals it needs to work safely
+## Not doing — proposed additions not adopted, and cuts (with reason)
 ## Open questions & flagged ambiguities
-## PM recommendations (clarify / split / re-scope / sequence / cut)
 ## Traceability — source PRD section per requirement
-```
-
-### `system-impact-analysis.md`
-```markdown
-# System Impact Analysis — <feature>
-## Implementation overview — how the requirements land in the system
-## Reuse — existing components to leverage (file / module / symbol)
-## Net-new — components/routes/services to introduce + justification
-## Blast radius — surfaces, data flows, contracts touched
-## Risks & unknowns
-## Traceability — codebase references (path + symbol)
 ```
 
 ### `holistic-architecture.md`
 ```markdown
 # Holistic Architecture Plan — <feature>
 ## Approach — surgical modification vs. new surface area (with justification)
-## Components & responsibilities
+## Components & responsibilities (reused vs. new; each new one justified)
 ## Boundaries & contracts
-## DRY assessment — duplication risks and how they're avoided
+## Blast radius — surfaces, data flows, contracts touched
 ## Safety sanity check — blatant unsafe practices flagged (lightweight)
-## Key tradeoffs
+## Key tradeoffs & risks
+## Not doing — designs considered and rejected as unnecessary
 ## Open decisions (for the human)
 ## Verdict
+## Traceability — codebase references (path + symbol)
 ```

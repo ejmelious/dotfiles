@@ -1,10 +1,8 @@
 # Phase 2 — Milestone Breakdown
 
-> **STATUS: VALIDATED.**
+**Goal:** decompose the refined PRD + holistic architecture (both post-G1) into ordered, independently-shippable milestones that deliver incrementally.
 
-**Goal:** decompose the validated architecture + refined PRD into ordered, actionable, independently-shippable milestones.
-
-**Read `references/loop-process.md` first.**
+**Read `references/loop-process.md` first.** This phase runs **two loops**: Author → Ground. The Ground loop gives the verdict.
 
 **Input packet:** Phase 1 artifacts + codebase.
 
@@ -14,37 +12,33 @@
 
 **Mandate:** author the milestone breakdown as vertical, value-delivering slices.
 
-**Do:** decompose into milestones that each ship something coherent; define goal, scope, and exit criteria per milestone; map dependencies; sequence for incremental value. Prefer thin vertical slices over horizontal layers.
+**Do:** decompose into milestones that each ship something coherent; define goal, scope, exit criteria, and size (S / M / L / XL) per milestone; map dependencies; sequence for incremental value. Prefer thin vertical slices over horizontal layers. Use as many milestones as the work needs to ship safely in slices, and no more — a milestone that can't ship value on its own should merge with its neighbor.
 
-**Produces — Milestone Plan (first draft).**
+**Produces — Milestone Plan (first draft).** Save reasoning to `.loops/loop-1-tpm.md`.
 
-## Loop 2 — Tech Lead (Ground)
+## Loop 2 — Tech Lead (Ground + Verdict)
 
-**Mandate:** ground the breakdown against engineering reality.
+**Mandate:** ground the breakdown against engineering reality and decide whether it ships.
 
-**Do:** test whether slices are genuinely independent (no hidden dependency cycles); confirm each milestone is buildable, testable, and shippable on its own; right-size them; pull risk and uncertainty forward (de-risking spikes first); verify against the codebase's actual seams.
+**Do:**
+- Test that slices are genuinely independent (no hidden dependency cycles) and each is buildable, testable, and shippable on its own.
+- Verify the boundaries against the codebase's actual seams.
+- Right-size milestones; merge ones that are too thin to stand alone.
+- Pull risk and uncertainty forward (de-risking spikes first) so a slip in one milestone doesn't cascade.
+- Group milestones into dependency layers (which can be specced in parallel in Phase 3).
+- Give a verdict: ship / revise / escalate.
 
-**Produces:** critique + re-sequenced/re-scoped revisions.
-
-## Loop 3 — Engineering Manager (Pressure-test)
-*The delivery-feasibility lens.*
-
-**Mandate:** pressure-test the plan as something a real team must execute, and audit Loop 2.
-
-**Do:** trace the critical path; assess parallelizability across people/squads; surface risk concentration and single points of failure; check that uncertainty is front-loaded and that a slip in one milestone doesn't cascade. Verdict.
-
-**Produces:** delivery pressure-test + verdict.
+**Produces:** critique + revisions + verdict in `.loops/loop-2-tech-lead.md`.
 
 ---
 
 ## Synthesis — `milestone-plan.md`
 ```markdown
 # Milestone Plan — <feature>
-## Milestones (each: goal / scope / exit criteria / dependencies / value shipped)
+## Milestones (each: goal / scope / exit criteria / size / dependencies / value shipped)
 ## Sequencing & rationale (why this order)
-## Critical path
+## Dependency layers (which milestones can be specced in parallel)
 ## Risk-front-loading & de-risking spikes
-## Parallelization map
 ## Open decisions
 ## Verdict
 ```
