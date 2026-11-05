@@ -4,11 +4,11 @@ The reusable heart of the executor. Every milestone runs through it: a **per-tas
 
 ## Per-task cycle
 
-For each story/task in the milestone, in the order the execution plan defines:
+For each story/task in the milestone, in the order the eng spec's task list defines:
 
-1. **Read the task** — its description, **acceptance criteria** (Phase 4), and the **test the Phase 5 plan specified** for it.
+1. **Read the task** — its description, **acceptance criteria** (eng spec, Phase 3), and the **test the Phase 4 test plan specified** for it.
 
-2. **Test-first (where a test is specified).** Write or extend that test *before* implementing, and run it to **watch it fail**. This proves the test actually exercises the new behavior — a test that passes before you've written the code is testing nothing. Where Phase 5 didn't pre-specify a test, implement and add the test alongside. Test-first is the load-bearing signal that makes "done" un-fudgeable with no human watching.
+2. **Test-first (where a test is specified).** Write or extend that test *before* implementing, and run it to **watch it fail**. This proves the test actually exercises the new behavior — a test that passes before you've written the code is testing nothing. Where the test plan didn't pre-specify a test, implement and add the test alongside. Test-first is the load-bearing signal that makes "done" un-fudgeable with no human watching.
 
 3. **Implement** per the milestone's eng spec — honor the reuse-vs-net-new decisions and the architecture. Make the smallest change that satisfies the task; resist scope creep (scope explosion is an unrecoverable trigger, not a license to keep going).
 
@@ -18,7 +18,7 @@ For each story/task in the milestone, in the order the execution plan defines:
 
 6. **Confirm acceptance criteria** — explicitly check each of the task's acceptance criteria is met. Tests passing and criteria met are both required; neither alone is "done."
 
-7. **Commit** per the milestone's PR strategy (Phase 4). Commit locally — do not push.
+7. **Commit** per the milestone's commit plan (eng spec, Phase 3). Commit locally — do not push.
 
 8. **Update the ledger** — task status, commit(s), criteria satisfied, tests covering it.
 
