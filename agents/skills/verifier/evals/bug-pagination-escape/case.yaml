@@ -1,0 +1,15 @@
+schema_version: "1.1"
+name: bug-pagination-escape
+expected_outcome: |
+  A verifier proposal is written (under .ai-dev/verifiers/) without changing any source
+  file. It states the failure as a class (pagination stopping on an empty page that still
+  has a continuation token) with an invariant, explains that the existing test missed it
+  because it only covers full pages (a coverage gap), and proposes a cheap pre-merge
+  verifier — a property or unit test over fetchAll that generates empty pages with a
+  nextToken — plus the BUG-412 input as a regression case. It notices that
+  src/fetchers/users.ts hand-rolls the same buggy loop and proposes catching the class
+  there too (route it through fetchAll and/or a lint rule against hand-rolled pagination
+  loops). It gives a proof-of-catch plan (run the test against the pre-fix code), a
+  failure message, where it runs, and addresses detection, given the 9-day gap.
+context:
+  scaffold_script: place-files.sh

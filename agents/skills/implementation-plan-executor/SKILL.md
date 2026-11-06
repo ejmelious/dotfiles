@@ -11,7 +11,7 @@ This is the companion to `implementation-plan-builder`. The builder produces the
 
 ## Inputs
 
-1. **The implementation plan** — a feature-slug folder under `.ai-dev/implementation-plan/<feature-slug>/`, produced by `implementation-plan-builder`, holding the milestone plan (each milestone's exit criteria), the per-milestone eng specs (design, tasks, acceptance criteria, "Not doing", and a commit plan grouped into PRs), the test plans, and the Phase 5 final validation (coverage matrix, cross-milestone seams, outstanding concerns). The handoff contract (identity, milestones with `depends_on` and `touches`, sign-off status) is the builder's shared `.ai-dev/implementation-plan/manifest.yaml`, one level up. It is either a single feature entry or a top-level `features:` list; use the entry whose `folder` matches the selected `<feature-slug>`.
+1. **The implementation plan** — a feature-slug folder under `.ai-dev/implementation-plan/<feature-slug>/`, produced by `implementation-plan-builder`, holding the milestone plan (each milestone's exit criteria), the per-milestone eng specs (design, tasks, acceptance criteria, "Not doing", and a commit plan grouped into PRs), the test plans (with each milestone's verifier map, verifiers to build, and post-merge verification), the Phase 1 `verifier-audit.md`, and the Phase 5 final validation (coverage matrix, cross-milestone seams, outstanding concerns). The handoff contract (identity, milestones with `depends_on` and `touches`, sign-off status) is the builder's shared `.ai-dev/implementation-plan/manifest.yaml`, one level up. It is either a single feature entry or a top-level `features:` list; use the entry whose `folder` matches the selected `<feature-slug>`.
 2. **The codebase** — the current working repository.
 
 ### Selecting the plan (before the autonomous run)
@@ -56,7 +56,7 @@ The run is fully unattended. **There are no per-milestone human approvals.** The
 |------|---------|------|
 | **Orchestrator** (you) | manifest, ledgers, worker/reviewer summaries | Stage 0 baseline, scheduling layers, creating worktrees, dispatching workers and reviewers, merging, the main ledger, reports. Never edits product code. |
 | **Drift checker** (read-only, one per milestone, Stage 0) | one milestone's eng spec + the code it names | Reports minor / major plan-vs-code drift. |
-| **Milestone worker** (one per milestone) | its milestone's exit criteria, eng spec, test plan, holistic architecture, the cross-milestone seams it touches, milestone ledger, its worktree | Pre-flight, the per-task cycle, the milestone's full suite, fixing gate findings. |
+| **Milestone worker** (one per milestone) | its milestone's exit criteria, eng spec, test plan, holistic architecture, the cross-milestone seams it touches, milestone ledger, its worktree | Pre-flight, the per-task cycle (including building planned verifiers with the `verifier` skill), the milestone's full suite, fixing gate findings. |
 | **Acceptance & architecture reviewer** (fresh, per gate) | exit criteria, spec, test plan, architecture, seams, milestone diff, suite results | Tries to falsify exit and acceptance criteria, test reality, scope ("Not doing"), seams, architecture conformance. |
 | **TypeScript reviewer** (fresh, per gate, when `.ts`/`.tsx` changed) | `typescript-review` in embedded, report-only mode | Rated type-safety findings on the milestone's commit range. |
 

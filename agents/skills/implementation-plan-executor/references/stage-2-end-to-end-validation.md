@@ -22,10 +22,14 @@ Turn the eng specs' commit plans into branches the human can push as stacked PRs
 
 Record the stack in the main ledger.
 
+For each PR, write a **verification note** to `.execution/pr-notes/pr<K>.md`, ready to paste into the PR description: the verifiers that ran on it and their results (from the milestone ledgers and gate reviews), new verifiers it adds with their red/green proof, what it could not verify, and the post-merge verification from the test plan (shadow, load, canary, rollout) with the evidence each should produce.
+
 ## 4. Final report
 Write the implementation report (format in the control spine), including:
 - the TypeScript review section, aggregated from each milestone's `typescript-review.md`;
-- the PR stack;
+- the PR stack, with each PR's verification note;
+- verifiers built in the run, and the proposed verifiers from every `verifier-escapes.md`;
+- the post-merge verification still to do;
 - every non-blocking open decision the workers settled, with the choice and why;
 - the carried-forward risks: test plans' coverage gaps and accepted risks, Phase 5's outstanding concerns and safety flags, and `out_of_scope_findings`, which were left untouched.
 

@@ -12,7 +12,7 @@
 
 **Mandate:** author the milestone breakdown as vertical, value-delivering slices.
 
-**Do:** decompose into milestones that each ship something coherent; define goal, scope, exit criteria, and size (S / M / L / XL) per milestone; map dependencies; sequence for incremental value. Prefer thin vertical slices over horizontal layers. Use as many milestones as the work needs to ship safely in slices, and no more — a milestone that can't ship value on its own should merge with its neighbor.
+**Do:** decompose into milestones that each ship something coherent; define goal, scope, exit criteria, and size (S / M / L / XL) per milestone; map dependencies; sequence for incremental value. Prefer thin vertical slices over horizontal layers. Use as many milestones as the work needs to ship safely in slices, and no more — a milestone that can't ship value on its own should merge with its neighbor. When several milestones need the same missing verifier (a golden dataset, a contract harness, a request-budget fake), plan it as its own milestone (`kind: verifier`) ahead of them, so each is proven before the work it guards; a verifier only one milestone needs stays a task in that milestone.
 
 **Produces — Milestone Plan (first draft).** Save reasoning to `.loops/loop-1-tpm.md`.
 

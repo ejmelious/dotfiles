@@ -26,9 +26,11 @@ For each task in the order the eng spec's task list defines:
 
 After the last task, confirm each of the milestone's **exit criteria** (milestone plan) is met — task-level criteria passing doesn't guarantee it. Then run the full suite in the workspace and return `ready_for_gate`.
 
+**Verifier tasks** (from the test plan's "Verifiers to build", or a whole `kind: verifier` milestone) use the `verifier` skill's embedded **build** mode: make the bad case first, then show the verifier fails on it for the right reason and passes on correct code. Record both runs in the milestone ledger. A verifier is proven before any task it guards starts — the guarded task's tests then run with it.
+
 **Spike milestones** answer questions rather than ship behavior. Write the answers, with evidence, to `.execution/milestone-<N>/spike-findings.md`. Commit only code the eng spec says ships; throwaway exploration stays off the branch.
 
-**TypeScript fix rules apply throughout** — not only when fixing review findings. Never make code compile or tests pass with `as any`, `as unknown as T`, a new non-null `!`, `@ts-ignore` / `@ts-expect-error`, `eslint-disable`, loosened tsconfig, or a weakened or deleted test. Validate data at trust boundaries instead of asserting its type.
+**TypeScript fix rules apply throughout** — not only when fixing review findings. Never make code compile or tests pass with `as any`, `as unknown as T`, a new non-null `!`, `@ts-ignore` / `@ts-expect-error`, `eslint-disable`, loosened tsconfig, or a weakened or deleted test or verifier — no lowered rule levels or thresholds, new skips, or golden or snapshot updates that aren't the intended behavior change. Validate data at trust boundaries instead of asserting its type.
 
 ## Review gate (orchestrator)
 
@@ -45,6 +47,8 @@ Inputs: the milestone's exit criteria (milestone plan), the eng spec, task list,
 - **Architecture conformance** — no drift from the holistic architecture; reuse honored; net-new introduced cleanly.
 - **No regressions** — the milestone's changes are self-consistent and nothing earlier broke.
 - **Tests are real** — they assert the behavior, not tautologies.
+- **Verifiers** — every verifier the test plan maps to this milestone ran and passed; each new verifier has its red and green proof in the ledger; no existing verifier was weakened.
+- **Escapes** — if it finds a defect the verifiers all passed, it says so. The orchestrator runs the `verifier` skill's **escape-note** on it and appends the result to `.execution/milestone-<N>/verifier-escapes.md`. The run doesn't build these; they go to the final report.
 
 It writes `.execution/milestone-<N>/gate-review.md` and returns `pass`, `fix` (with specific defects), or `escalate` (a problem that isn't a local fix: drift, scope, design).
 

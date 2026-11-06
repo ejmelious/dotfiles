@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: incident-regional-traffic
+expected_outcome: |
+  A verifier proposal is written that answers both prevention and detection. Prevention
+  includes a cheap pre-merge check that would have seen the change — e.g. a unit/contract
+  test with a counting fake client asserting vendor request count per N devices (batch
+  calls, not one per device) — and explains that the existing unit tests missed it because
+  they only assert returned data. It recognises that the regional scale effect needs
+  something beyond unit tests: a load/request-budget check at largest-account scale and/or
+  a staged per-region rollout gate comparing outbound vendor request rate and 429s against
+  the previous version. Detection: an alert on vendor request rate or 429 rate (relative to
+  baseline / rate limit) that would fire far sooner than the 6-hour sync-failure monitor.
+  Each verifier has where it runs, a failure message, an owner, and a proof-of-catch plan
+  (e.g. run against the pre-fix v2 code). No customer names or data appear.

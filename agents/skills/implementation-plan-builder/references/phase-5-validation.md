@@ -28,7 +28,7 @@
 ## Output — `final-validation.md`
 ```markdown
 # Final End-to-End Validation & Sign-off — <feature>
-## Coverage check — every refined-PRD requirement → milestone(s) and test(s) that deliver it
+## Coverage check — every refined-PRD requirement → milestone(s) and the verifier(s) or test(s) that prove it, including post-merge verification
 ## Cross-milestone seams & integration points
 ## Missed edges & gaps
 ## Outstanding concerns, safety flags & unresolved open decisions
