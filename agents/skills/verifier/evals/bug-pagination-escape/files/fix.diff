@@ -1,0 +1,17 @@
+--- a/src/fetchAll.ts
++++ b/src/fetchAll.ts
+@@ -5,12 +5,10 @@
+ export async function fetchAll<T>(fetchPage: FetchPage<T>): Promise<T[]> {
+   const all: T[] = [];
+   let token: string | undefined;
+-  while (true) {
++  do {
+     const page = await fetchPage(token);
+-    if (page.items.length === 0) break;
+     all.push(...page.items);
+     token = page.nextToken;
+-    if (!token) break;
+-  }
++  } while (token);
+   return all;
+ }

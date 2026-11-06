@@ -23,7 +23,7 @@ Run phases in order. Each phase consumes the prior phases' final artifacts plus 
 | 1 | Requirements & Architecture | Refined PRD, Holistic Architecture | Staff PM → Sr. Engineer → Architect | **G1** | `references/phase-1-requirements.md` |
 | 2 | Milestone Breakdown | Milestone Plan | TPM → Tech Lead | — | `references/phase-2-milestone-breakdown.md` |
 | 3 | Eng Spec, Tasks & Architecture Review *(per milestone)* | Eng Spec (design + tasks + commit plan) | Sr. Engineer → Codebase Expert → Architecture Review | **G2** per milestone | `references/phase-3-eng-spec-and-architecture-review.md` |
-| 4 | Quality & Test *(per milestone)* | Test Plan | Test Architect — single pass | **G3** if 3+ milestones | `references/phase-4-quality-and-test.md` |
+| 4 | Verification & Test *(per milestone)* | Test Plan (verifier map, verifiers to build, post-merge verification, tests) | Test Architect — single pass | **G3** if 3+ milestones | `references/phase-4-quality-and-test.md` |
 | 5 | Final Validation & Sign-off *(whole plan)* | Final Validation | Architect — single pass | — | `references/phase-5-validation.md` |
 
 When entering a phase, **read that phase's reference file in full before doing anything else.**
@@ -38,6 +38,10 @@ Read **`references/loop-process.md`** before running any phase. In brief:
 - **Synthesis.** Fold accepted recommendations into the final artifact. Additions and removals both have to name the concrete need they serve or protect. Surface unresolved tensions as open decisions.
 
 Run each loop as an independent subagent with a fresh context so later loops aren't anchored by earlier reasoning.
+
+## Verifiers
+
+A **verifier** is an automated check an agent can run to prove its work correct — types and lint rules through tests, golden data, contracts, browser checks, shadow runs, load checks, canaries and rollout gates. The plan identifies which verifiers prove each milestone, and which are missing. The `verifier` skill owns the ladder and the bar a verifier must meet; this skill calls it embedded: **audit** in Phase 1, **map** in Phase 4. Under the right-sized principle, every verifier the plan adds names the failure mode it catches.
 
 ## Simplification gates
 
@@ -59,6 +63,7 @@ Every initiative gets its own **feature folder** under `.ai-dev/implementation-p
     ├── phase-1-requirements/
     │   ├── refined-prd.md
     │   ├── holistic-architecture.md
+    │   ├── verifier-audit.md           # the repo's verifiers by ladder rung (verifier skill, embedded audit)
     │   └── .loops/{loop-1-staff-pm, loop-2-sr-engineer, loop-3-architect, simplification}.md
     ├── phase-2-milestone-breakdown/
     │   ├── milestone-plan.md
@@ -100,14 +105,15 @@ open_decisions: []                   # each entry: {summary, blocking: true|fals
 out_of_scope_findings: []            # optional — security/hygiene issues surfaced but not in scope
 ```
 
-After Phase 2, each milestone carries: `id`, `name`, `size`, `depends_on: [<ids>]`, `status: not_started`, `kind: spike` on de-risking spikes, plus artifact pointers and `touches: [<paths>]` as Phase 3 lands.
+After Phase 2, each milestone carries: `id`, `name`, `size`, `depends_on: [<ids>]`, `status: not_started`, `kind: spike` on de-risking spikes or `kind: verifier` on milestones that build a shared verifier, plus artifact pointers and `touches: [<paths>]` as Phase 3 lands.
 
 ### When the manifest gets touched
 
 - **Session start:** skeleton.
+- **End of Phase 1:** `artifacts.verifier_audit`.
 - **End of Phase 2:** `milestones` with dependency order, sizes, metadata.
 - **End of Phase 3** (after G2): `artifacts.eng_spec` and `touches` per milestone — the repo-relative files the eng spec modifies or creates, taken from its Changes and Traceability sections. The executor uses `touches` to decide which milestones can run in parallel.
-- **End of Phase 4:** `artifacts.test_plan` per milestone.
+- **End of Phase 4:** `artifacts.test_plan` per milestone, and `touches` extended with the files of any verifier tasks Phase 4 added.
 - **After any gate:** `unsure` items go to `open_decisions` with `blocking: false`; milestones removed or merged by a gate are updated.
 - **End of Phase 5:** `status: complete`, `signed_off: true`, `signed_off_date`; anything Phase 5 surfaced goes to `open_decisions` or `out_of_scope_findings`.
 

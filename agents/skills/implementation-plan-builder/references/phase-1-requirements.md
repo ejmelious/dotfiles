@@ -32,6 +32,7 @@
 - Identify where something genuinely new is needed, and why the closest existing thing won't do.
 - Map blast radius: surfaces, data flows, and contracts touched.
 - Critique the refined PRD where it's infeasible, underspecified, or naive about the system.
+- **Audit the verifiers** for the area the PRD touches: run the `verifier` skill in embedded **audit** mode, scoped to the blast radius, and save the result as `verifier-audit.md`. It tells the plan which rungs it can lean on (and their exact commands) and which are missing or can't actually run.
 
 **Produces — System Impact Analysis + PRD critique**, both in `.loops/loop-2-sr-engineer.md`. The impact analysis is a working document for Loop 3, not a final artifact; its conclusions land in `holistic-architecture.md`.
 
@@ -76,6 +77,7 @@ Fold the loops into two clean final artifacts, applying the synthesis rules in `
 ## Blast radius — surfaces, data flows, contracts touched
 ## Safety sanity check — blatant unsafe practices flagged (lightweight)
 ## Key tradeoffs & risks
+## Verification — the rungs this feature can rely on (from verifier-audit.md), and the gaps its risks make matter
 ## Not doing — designs considered and rejected as unnecessary
 ## Open decisions (for the human)
 ## Verdict

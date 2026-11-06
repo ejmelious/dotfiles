@@ -31,6 +31,7 @@ All ledgers live in the main checkout under `.ai-dev/implementation-plan/<featur
 - the last commit of each planned PR
 - open decisions reached: the choice made and why
 - exit criteria confirmed
+- for each verifier built: the red run on the bad case and the green run on correct code
 - full-suite results; gate findings received and how each was fixed
 
 One writer per file means parallel workers never conflict.
@@ -86,7 +87,8 @@ On an unrecoverable wall, **stop the run**: dispatch no new milestones or batche
 ```markdown
 # Implementation Report — <feature>
 ## Summary — milestones completed, layers run in parallel, total commits, suite status
-## PR stack — in merge order: branch, base, the tasks and requirements it covers, its size. Merge bottom-up; after each squash merge, merge `main` into the next branch before merging it.
+## PR stack — in merge order: branch, base, the tasks and requirements it covers, its size. Merge bottom-up; after each squash merge, merge `main` into the next branch before merging it. Each PR's verification note is in `.execution/pr-notes/`.
+## Verifiers — built in this run (with proof), proposed from escapes the gates caught, and post-merge verification still to do
 ## Traceability matrix — requirement → milestone → task → commit(s) → test(s), planned vs actual
 ## Open-decision choices — each non-blocking decision the run settled: the choice and why
 ## Architecture conformance — adherence to the holistic architecture; any accepted minor drift

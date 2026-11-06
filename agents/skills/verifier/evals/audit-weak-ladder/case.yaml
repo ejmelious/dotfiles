@@ -1,0 +1,15 @@
+schema_version: "1.1"
+name: audit-weak-ladder
+expected_outcome: |
+  A ladder audit report is written (under .ai-dev/verifiers/) with an inventory table that
+  gives an exact command and where it runs for each rung present. It notices the weak spots
+  rather than counting rungs as present: strict is false in tsconfig; the no-restricted-imports
+  boundary rule is only "warn" and is already violated by src/refunds.ts; two tests are
+  it.skip; unit tests don't run on pull requests (only on push to main); fast-check is a
+  dependency but unused; Playwright is installed but there are no e2e specs or CI job; no
+  git or agent hooks. It ranks gaps by risk for a billing service and names two top gaps
+  with proposals (e.g. run tests on PR + unskip, and make the ledger boundary an error /
+  property tests on invoice totals). It says which rungs aren't needed. No source files
+  are changed.
+context:
+  scaffold_script: place-files.sh
