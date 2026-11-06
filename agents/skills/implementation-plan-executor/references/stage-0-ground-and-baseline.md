@@ -15,7 +15,8 @@ Then read each test plan's strategy and CI sections and find a command for **eve
 ## 3. Can the test suite run concurrently?
 Parallel worktrees each run the suite. Check the test setup for shared resources: a fixed database or schema (docker-compose services, a shared `DATABASE_URL`), fixed ports, global setup that writes to a fixed path, or an external service with shared state.
 - Nothing shared → `concurrent_tests: true`.
-- Anything shared, or you can't tell → `concurrent_tests: false`. Workers may still implement in parallel, but full-suite runs take turns (see Stage 1).
+- Shared, but the repo can point each workspace at its own copy (a database name, port, or output path set by env var or config) → give each worktree its own values and set `concurrent_tests: true`. Record the per-workspace settings in the main ledger.
+- Shared and not isolatable, or you can't tell → `concurrent_tests: false`. Any test that touches the shared resource can collide with another workspace's, targeted tests included, so milestones run **one at a time**: every batch has one milestone (step 6).
 
 ## 4. Establish the baseline
 Run the full toolchain in the main checkout.
@@ -41,7 +42,7 @@ From the manifest's `depends_on`, group milestones into layers (layer 1 = no dep
 
 If a milestone has no `touches` (older plans), derive it from its eng spec's Changes and Traceability sections; if you can't, run it in a batch of its own.
 
-Cap each batch at **3** parallel workers by default.
+Cap each batch at **3** parallel workers by default, or **1** when `concurrent_tests: false`.
 
 ## 7. Branch and initialize the ledgers
 Create the integration branch `<feature-slug>` from `baseline_commit`. Initialize `.ai-dev/implementation-plan/<feature-slug>/.execution/ledger.md` (main ledger) and one `.execution/milestone-<N>/ledger.md` per milestone, per the control spine. Set `last_green_commit` to the baseline.

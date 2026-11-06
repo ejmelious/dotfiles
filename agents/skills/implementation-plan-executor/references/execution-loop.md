@@ -24,7 +24,7 @@ For each task in the order the eng spec's task list defines:
 
 8. **Update the milestone ledger** — task status, commit(s), criteria satisfied, tests covering it.
 
-After the last task, confirm each of the milestone's **exit criteria** (milestone plan) is met — task-level criteria passing doesn't guarantee it. Then run the full suite in the workspace (unless told `concurrent_tests: false`) and return `ready_for_gate`.
+After the last task, confirm each of the milestone's **exit criteria** (milestone plan) is met — task-level criteria passing doesn't guarantee it. Then run the full suite in the workspace and return `ready_for_gate`.
 
 **Spike milestones** answer questions rather than ship behavior. Write the answers, with evidence, to `.execution/milestone-<N>/spike-findings.md`. Commit only code the eng spec says ships; throwaway exploration stays off the branch.
 

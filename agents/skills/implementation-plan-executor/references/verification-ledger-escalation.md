@@ -18,7 +18,7 @@ This governs all three stages. With no human in the loop, these controls are wha
 All ledgers live in the main checkout under `.ai-dev/implementation-plan/<feature-slug>/.execution/`. Update them at every state change — they make the run resumable and auditable.
 
 **Main ledger — `ledger.md` (orchestrator only):**
-- `baseline_commit`, `baseline_failure_set`, `concurrent_tests`
+- `baseline_commit`, `baseline_failure_set`, `concurrent_tests` and any per-workspace test settings
 - `integration_branch`, `last_green_commit` (the integration branch's last green merge — the safe fallback)
 - the layers and batches from Stage 0
 - per milestone: status (`pending` / `in_progress` / `in_gate` / `done` / `halted`), branch, workspace path, `start_commit`, gate cycles used, merge commit
