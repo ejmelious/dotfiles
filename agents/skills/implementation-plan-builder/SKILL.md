@@ -100,13 +100,13 @@ open_decisions: []                   # each entry: {summary, blocking: true|fals
 out_of_scope_findings: []            # optional — security/hygiene issues surfaced but not in scope
 ```
 
-After Phase 2, each milestone carries: `id`, `name`, `size`, `depends_on: [<ids>]`, `status: not_started`, plus artifact pointers as they land.
+After Phase 2, each milestone carries: `id`, `name`, `size`, `depends_on: [<ids>]`, `status: not_started`, `kind: spike` on de-risking spikes, plus artifact pointers and `touches: [<paths>]` as Phase 3 lands.
 
 ### When the manifest gets touched
 
 - **Session start:** skeleton.
 - **End of Phase 2:** `milestones` with dependency order, sizes, metadata.
-- **End of Phase 3:** `artifacts.eng_spec` per milestone.
+- **End of Phase 3** (after G2): `artifacts.eng_spec` and `touches` per milestone — the repo-relative files the eng spec modifies or creates, taken from its Changes and Traceability sections. The executor uses `touches` to decide which milestones can run in parallel.
 - **End of Phase 4:** `artifacts.test_plan` per milestone.
 - **After any gate:** `unsure` items go to `open_decisions` with `blocking: false`; milestones removed or merged by a gate are updated.
 - **End of Phase 5:** `status: complete`, `signed_off: true`, `signed_off_date`; anything Phase 5 surfaced goes to `open_decisions` or `out_of_scope_findings`.

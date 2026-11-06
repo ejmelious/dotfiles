@@ -48,7 +48,7 @@ Loop 2 is the heaviest loop because subagents read "verify everything Loop 1 cit
 **Do:**
 - Specify the components / functions to modify or add (modify by default; justify each addition), data-model and migration changes, API/contract changes, and error handling.
 - Break the work into **ordered tasks** in safe landing order. Each task names what changes in the system (files / symbols) and has **acceptance criteria** that trace to the milestone's exit criteria or a refined-PRD requirement.
-- Group tasks into a **commit plan** — how they land as commits / PRs.
+- Group tasks into a **commit plan**: the commits, and the PRs they're grouped into. Each PR is a contiguous run of tasks that is reviewable and green on its own; the executor turns these into a stack of PR branches. A small milestone is one PR.
 
 **Produces — Eng Spec (first draft).**
 
@@ -94,7 +94,9 @@ The author (Loop 1 persona) incorporates Loop 2's grounding and Loop 3's feedbac
 ## Error handling & edge cases
 ## Tasks (in landing order)
   - T1 <task> — what changes in the system (files / symbols) · acceptance criteria
-## Commit plan (how tasks group into commits / PRs)
+## Commit plan
+  - PR 1 <title> — tasks T1–T2 · commits: <one line each>
+  - PR 2 <title> — tasks T3–T5 · commits: ...
 ## Not doing — considered and left out (with reason)
 ## Open decisions
 ## Verdict

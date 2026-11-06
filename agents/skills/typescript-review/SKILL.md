@@ -1,6 +1,6 @@
 ---
 name: typescript-review
-description: Expert, in-depth TypeScript code review of a completed piece of work (usually a PR), grounded in Effective TypeScript and other leading TypeScript guidance. Rates every finding Critical / High / Medium / Low, then — once the user OKs committing — fixes the Critical and High ones itself (test-first, verified with the repo's typecheck, lint and tests), commits each fix with a what/why explanation, leads its report with exactly what was done about each Critical/High finding, and — after the user confirms again — pushes and posts one summary comment on the PR. Use this whenever the user asks for a TypeScript review, a TS/type-safety review, a "thorough" or "expert" review of a PR, branch or diff that contains .ts/.tsx files, or says things like "review this PR's types", "check my TypeScript", "is this type-safe", "TS review and fix", even if they don't say "skill". Not for JavaScript-only code, for writing new features, or for tsconfig/build setup questions with no code to review.
+description: Expert, in-depth TypeScript code review of a completed piece of work (usually a PR), grounded in Effective TypeScript and other leading TypeScript guidance. Rates every finding Critical / High / Medium / Low, then — once the user OKs committing — fixes the Critical and High ones itself (test-first, verified with the repo's typecheck, lint and tests), commits each fix with a what/why explanation, leads its report with exactly what was done about each Critical/High finding, and — after the user confirms again — pushes and posts one summary comment on the PR. Use this whenever the user asks for a TypeScript review, a TS/type-safety review, a "thorough" or "expert" review of a PR, branch or diff that contains .ts/.tsx files, or says things like "review this PR's types", "check my TypeScript", "is this type-safe", "TS review and fix", even if they don't say "skill". Also runs report-only as a step of implementation-plan-executor's milestone review gate (see "Embedded mode"). Not for JavaScript-only code, for writing new features, or for tsconfig/build setup questions with no code to review.
 ---
 
 # TypeScript Review
@@ -264,6 +264,40 @@ and comment / push only / neither.
   One comment per review run.
 - If there is no PR (a local branch or working tree), skip this step and say
   where the report is.
+
+## Embedded mode (called by another skill)
+
+Another skill — e.g. `implementation-plan-executor`'s milestone review gate —
+can run this review as one step of an unattended run. You're in embedded mode
+when the caller's prompt says so and gives you a workspace path, a commit
+range, and a report path. Embedded mode is **report-only**: the caller's own
+worker fixes the findings, so the reviewer stays independent of the fixes.
+
+What changes from the workflow above:
+
+- **Target (step 1):** review `git diff <range>` in the given workspace. No
+  PR lookup, no checkout, no branch switching.
+- **Project rules (step 2):** read tsconfig, the TypeScript version, lint
+  config and repo conventions as usual. Don't run typecheck, lint or tests:
+  use the verification results the caller passes in. If it passes none, run
+  them once, read-only.
+- **Review and rate (steps 3–4):** unchanged, including verifying every
+  finding and writing a failure scenario for each Critical/High.
+- **Skip steps 5, 6 and 8.** Ask nothing, edit nothing, commit nothing, push
+  nothing, comment nothing.
+- **Fix route instead of a fix.** For each Critical/High finding, say who can
+  fix it: `worker` (with the fix you recommend, in enough detail to act on),
+  or `needs engineer` when the fix would change a public API used outside
+  the repo, need a new dependency, or need a product decision — the same
+  hand-back rules as step 6.
+- **Report (step 7):** write it to the caller's report path using
+  `assets/report-template.md`. In the Critical & High table, the status
+  column is the fix route and the Commit/Verified columns are `—`. Return to
+  the caller only the headline counts and one line per Critical/High finding:
+  ID, severity, `path:line`, fix route.
+- **Re-review:** when the caller asks you to re-check specific finding IDs
+  against new commits, check only those findings and report each as
+  resolved or not, with the evidence.
 
 ## Writing findings
 
