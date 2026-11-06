@@ -1,83 +1,91 @@
-# Control Spine — Verification, Ledger, Self-Correction & Escalation
+# Control Spine — Verification, Ledgers, Self-Correction & Escalation
 
 This governs all three stages. With no human in the loop, these controls are what make autonomy safe. Read it before Stage 0.
 
 ## Verification discipline
 
-**What "green" means.** All discovered verification commands pass: build, typecheck, lint, and the test suite. The exact commands are discovered in Stage 0 from the repo (package.json scripts, CI config, Makefile, etc.) — never assumed.
+**What "green" means.** All discovered verification commands pass: build, typecheck, lint, and the test suite. The commands are discovered in Stage 0 from the repo — never assumed.
 
-**Baseline-relative green.** Real repos aren't always green at rest. In Stage 0, if the suite is fully green, that's the baseline. If it isn't, record the **exact set of pre-existing failures** as the baseline set. From then on the invariant is: **no new failures beyond the recorded baseline set.** A previously-failing test that stays failing is tolerated and noted; any *new* failure is red.
+**Baseline-relative green.** If the suite isn't green at rest, Stage 0 records the **exact set of pre-existing failures**. From then on the invariant is **no new failures beyond the baseline set.** A pre-existing failure that stays failing is tolerated and noted; any *new* failure is red.
 
-**Two verification tempos:**
-- **Inner loop (per task):** run the targeted tests for the change plus typecheck/lint — fast feedback while implementing.
-- **Gate (per milestone, and Stage 2):** run the **full suite**. This is the regression firewall. With no human watching for cross-milestone breakage, a full green suite at every gate is the only thing that catches "milestone 4 quietly broke milestone 2." Never skip it to save time.
+**Three verification points:**
+- **Inner loop (per task, worker):** targeted tests for the change plus typecheck/lint.
+- **Gate (per milestone):** the **full suite** on the milestone branch. This catches a milestone breaking anything already merged.
+- **Merge (every merge after the first in a batch):** the full suite on the merged tree, before the merge is committed. This catches two independently-green siblings that break each other. Never skip either to save time.
 
-## Progress ledger
+## Ledgers
 
-A single source of truth at `.ai-dev/implementation-plan/<feature-slug>/.execution/ledger.md`. Update it at every state change — it is what makes the run resumable and auditable.
+All ledgers live in the main checkout under `.ai-dev/implementation-plan/<feature-slug>/.execution/`. Update them at every state change — they make the run resumable and auditable.
 
-Track:
-- `baseline_commit` and the recorded `baseline_failure_set`
-- `branch`
-- `last_green_commit` — the most recent commit where the gate was green; the safe place to fall back to
-- per **milestone**: status (`pending` / `in_progress` / `done` / `halted`), start/end commits
-- per **task** within a milestone: status, the commit(s) that implemented it, which acceptance criteria it satisfies, which tests cover it
-- `current_position` — milestone + task in progress
+**Main ledger — `ledger.md` (orchestrator only):**
+- `baseline_commit`, `baseline_failure_set`, `concurrent_tests`
+- `integration_branch`, `last_green_commit` (the integration branch's last green merge — the safe fallback)
+- the layers and batches from Stage 0
+- per milestone: status (`pending` / `in_progress` / `in_gate` / `done` / `halted`), branch, workspace path, `start_commit`, gate cycles used, merge commit
 - `run_status` — `running` / `complete` / `halted`
 
-**Resumability.** On startup, read the ledger. If a prior run was interrupted (`run_status: running` but the process isn't), re-verify the repo is at `last_green_commit` and green, then resume from `current_position` — do not redo completed tasks or re-apply committed work.
+**Milestone ledger — `milestone-<N>/ledger.md` (that milestone's worker only):**
+- minor drift from Stage 0 and pre-flight, and how it was adapted
+- per task: status, commit(s), acceptance criteria satisfied, tests covering it, self-correction attempts used
+- full-suite results; gate findings received and how each was fixed
+
+One writer per file means parallel workers never conflict.
+
+**Resumability.** On startup, read the main ledger. If a prior run was interrupted (`run_status: running` but nothing is running):
+- `done` milestones stay done.
+- `in_progress` / `in_gate` milestones: check the workspace still exists and its branch head matches the milestone ledger's last commit; re-dispatch a worker to continue from the first task not marked done, then gate as normal.
+- Confirm the integration branch is at `last_green_commit` before merging anything new.
 
 ## Bounded self-correction
 
-Self-correction is bounded so a stuck run fails safe instead of thrashing forever.
+- **Per-task budget:** 3 correction attempts by default, each a *different* hypothesis.
+- **Per-milestone gate budget:** 2 fix cycles by default, shared across both reviewers' findings and any merge-conflict or post-merge-red rework.
+- **Non-progress detection:** two consecutive attempts with the **same failure signature** is a loop, not progress — stop spending budget on it.
 
-- **Per-task budget:** a fixed number of correction attempts to get a task green (default 3). Each attempt must be a *different* hypothesis, not a retry of the same edit.
-- **Per-milestone gate budget:** a fixed number of fix-cycles after the review gate returns "fix" (default 2) before the milestone is considered unrecoverable.
-- **Non-progress detection:** if two consecutive attempts produce the **same failure signature** (same failing test / same error), that's a loop, not progress — stop spending budget on it and treat it as trending toward unrecoverable. Repeating an approach that already failed is the clearest sign the agent is stuck.
-
-These defaults are deliberately conservative. They can be tuned, but raising them trades safety for persistence.
+These defaults are deliberately conservative; raising them trades safety for persistence.
 
 ## Unrecoverable walls → hard-stop
 
-A wall is **unrecoverable** when any of these holds and self-correction within budget hasn't cleared it:
-- A task or milestone cannot reach green within its budget.
-- **Major plan-vs-code drift** — implementing as written would require redesigning the approach, not just adjusting a file path or symbol reference. (Minor drift is adapted and noted; major drift has no human to re-plan it.)
-- **Scope explosion** — the work required vastly exceeds what the milestone defined, signaling the plan was wrong about the milestone.
-- The verification toolchain can't be established, or a green/baseline state can't be determined.
-- Non-progress: repeated identical failure signatures with budget exhausted.
+A wall is **unrecoverable** when, after self-correction within budget:
+- a task or milestone can't reach green;
+- **major plan-vs-code drift** — implementing as written would mean redesigning the approach;
+- **scope explosion** — the work vastly exceeds what the milestone defined;
+- the toolchain or a baseline can't be established;
+- a gate reviewer escalates (including a Critical TypeScript finding that needs an engineer);
+- non-progress with budget exhausted.
 
-On an unrecoverable wall, **hard-stop the entire run** — do not skip ahead, do not start the next milestone. In a dependency-ordered plan a failed milestone usually blocks what follows, and stopping bounds the blast radius.
+On an unrecoverable wall, **stop the run**: dispatch no new milestones or batches. Siblings already in flight finish their gate and merge if they pass, because their work is independent and already paid for. Nothing that depends on the failed milestone starts.
 
 ### Safe-stop procedure (exact order)
-1. **Stop.** No further tasks or milestones.
-2. **Leave the repo clean at a known-good state.** If there are uncommitted/in-progress changes from the failed task, revert the working tree to `last_green_commit` so nothing half-applied is left behind. Never leave a broken, dirty tree.
-3. **Write the escalation report** (format below).
-4. **Set the ledger** to `run_status: halted`, the failed milestone to `halted`, and record where and why.
-
-A clean repo at the last green commit is what makes the hard-stop safe: the human picks up from a known-good state, not a wreck.
+1. **Stop dispatching.** Let in-flight siblings finish and merge per Stage 1.
+2. **Confirm the integration branch is clean and at `last_green_commit`.** It only ever moves on green merges, so it should be; if a merge is mid-way, `git merge --abort`.
+3. **Leave the failed milestone's workspace in place** for the human to inspect — worktree, branch, and any uncommitted changes. Don't delete or reset it. (In the serial fallback, where work happens in the main checkout, commit nothing further and switch the main checkout back to the integration branch only if the tree is clean; otherwise leave it and say so.)
+4. **Write the escalation report.**
+5. **Set the main ledger** to `run_status: halted` and the failed milestone to `halted`, with where and why.
 
 ## Report formats
 
-### Escalation report — `.ai-dev/implementation-plan/<feature-slug>/.execution/escalation-report.md`
+### Escalation report — `.execution/escalation-report.md`
 ```markdown
 # Escalation Report — <feature>
-## Where it stopped — milestone N, task <id>
+## Where it stopped — milestone N, task <id> (or gate / merge)
 ## What was being attempted — the task + its acceptance criteria
-## Why it's unrecoverable — budget exhausted / major drift / scope explosion / toolchain / non-progress
-## Evidence — failing test(s) / error output (concise), failure signature
+## Why it's unrecoverable — budget exhausted / major drift / scope explosion / toolchain / gate escalation / non-progress
+## Evidence — failing test(s) / error output (concise), failure signature, or the gate finding
 ## Self-correction attempts — each distinct hypothesis tried and its result
-## Drift detail (if applicable) — what the plan assumed vs. what the code actually is
-## State left behind — last_green_commit SHA, branch, what's committed vs. not
-## Recommended human actions — specific next steps (e.g. re-plan milestone N, fix env, adjust contract)
+## Drift detail (if applicable) — what the plan assumed vs. what the code is
+## State left behind — integration branch + last_green_commit, milestones merged, the failed milestone's branch and workspace path (with any uncommitted changes)
+## Recommended human actions — specific next steps
 ```
 
-### Final implementation report — `.ai-dev/implementation-plan/<feature-slug>/.execution/implementation-report.md`
+### Final implementation report — `.execution/implementation-report.md`
 ```markdown
 # Implementation Report — <feature>
-## Summary — milestones completed, total commits, suite status
+## Summary — milestones completed, layers run in parallel, total commits, suite status
 ## Traceability matrix — requirement → milestone → task → commit(s) → test(s)
-## Architecture conformance — adherence to the holistic architecture; any noted, accepted minor drift
+## Architecture conformance — adherence to the holistic architecture; any accepted minor drift
+## TypeScript review — per milestone: Critical/High found and fixed; High findings that need an engineer; Medium/Low counts; links to each milestone's typescript-review.md
 ## Baseline note — pre-existing failures carried (if any)
-## What's ready — branch + commits ready to push / open PRs (not done automatically)
+## What's ready — integration branch + commits ready to push, and the milestone branches that can be deleted
 ## Follow-ups & accepted risks
 ```
