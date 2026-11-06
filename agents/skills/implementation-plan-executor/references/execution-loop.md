@@ -47,7 +47,7 @@ Inputs: the milestone's exit criteria (milestone plan), the eng spec, task list,
 - **Architecture conformance** — no drift from the holistic architecture; reuse honored; net-new introduced cleanly.
 - **No regressions** — the milestone's changes are self-consistent and nothing earlier broke.
 - **Tests are real** — they assert the behavior, not tautologies.
-- **Verifiers** — every verifier the test plan maps to this milestone ran and passed; each new verifier has its red and green proof in the ledger; no existing verifier was weakened.
+- **Verifiers** — every **pre-merge** verifier the test plan maps to this milestone ran and passed; each new verifier has its red and green proof in the ledger; no existing verifier was weakened. **Post-merge** entries (shadow, load, canary, rollout) can't run yet: check only that each has a verification plan stating the evidence it should produce. They go to the PR notes in Stage 2, and their absence of results is not a defect.
 - **Escapes** — if it finds a defect the verifiers all passed, it says so. The orchestrator runs the `verifier` skill's **escape-note** on it and appends the result to `.execution/milestone-<N>/verifier-escapes.md`. The run doesn't build these; they go to the final report.
 
 It writes `.execution/milestone-<N>/gate-review.md` and returns `pass`, `fix` (with specific defects), or `escalate` (a problem that isn't a local fix: drift, scope, design).

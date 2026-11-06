@@ -113,7 +113,7 @@ After Phase 2, each milestone carries: `id`, `name`, `size`, `depends_on: [<ids>
 - **End of Phase 1:** `artifacts.verifier_audit`.
 - **End of Phase 2:** `milestones` with dependency order, sizes, metadata.
 - **End of Phase 3** (after G2): `artifacts.eng_spec` and `touches` per milestone — the repo-relative files the eng spec modifies or creates, taken from its Changes and Traceability sections. The executor uses `touches` to decide which milestones can run in parallel.
-- **End of Phase 4:** `artifacts.test_plan` per milestone.
+- **End of Phase 4:** `artifacts.test_plan` per milestone, and `touches` extended with the files of any verifier tasks Phase 4 added.
 - **After any gate:** `unsure` items go to `open_decisions` with `blocking: false`; milestones removed or merged by a gate are updated.
 - **End of Phase 5:** `status: complete`, `signed_off: true`, `signed_off_date`; anything Phase 5 surfaced goes to `open_decisions` or `out_of_scope_findings`.
 

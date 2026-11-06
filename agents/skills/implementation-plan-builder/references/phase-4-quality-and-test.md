@@ -24,7 +24,7 @@ Milestones are independent here — run them in parallel.
 
 **Do:**
 - **Verifier map** — run the `verifier` skill in embedded **map** mode with this milestone's acceptance and exit criteria and the failure modes its eng spec and the architecture name. For each criterion: the cheapest ladder rung that proves it, and the existing verifier or `missing`. Each missing one is classed:
-  - `build-now` — add it to the eng spec's task list as a verifier task, ordered before the tasks it guards;
+  - `build-now` — add it to the eng spec's task list as a verifier task, ordered before the tasks it guards. Phase 3 has already settled the rest of the spec, so keep it consistent: put the task in the commit plan (in the PR with the task it guards, or its own PR just before), add its files to the Changes and Traceability sections, and add them to the milestone's `touches` in the manifest. The executor schedules parallel work from `touches`, so a missing file there can put two milestones on the same file at once;
   - `post-merge` — a rung that only exists after merge (shadow, load, canary, rollout): state the evidence it should produce, so the PR carries a verification plan;
   - `out-of-scope` — with the reason.
   Every verifier to build names the failure mode it catches; one that can't is cut.
