@@ -15,7 +15,7 @@ Record each milestone's branch, workspace path, and `start_commit` in the main l
 ### 2. Dispatch milestone workers (in parallel)
 One fresh subagent per milestone, all in one message. Keep the prompt to the specifics — the worker reads this skill's references itself:
 
-> "You are the milestone worker for milestone N of `<feature-slug>`. Read `execution-loop.md` and the control spine in `<abs path to this skill>/references/`. Work only in `<abs workspace path>` on branch `<branch>`. Your inputs (absolute paths, main checkout): eng spec, test plan, holistic architecture, milestone ledger. Toolchain: <commands>. Baseline failure set: <list or path>. `concurrent_tests: <true|false>`. Run pre-flight, the per-task cycle for every task, then the full suite, updating your milestone ledger as you go. Return: status (`ready_for_gate` / `halted`), branch head SHA, full-suite result vs baseline, and one line per task."
+> "You are the milestone worker for milestone N of `<feature-slug>`. Read `execution-loop.md` and the control spine in `<abs path to this skill>/references/`. Work only in `<abs workspace path>` on branch `<branch>`. Your inputs (absolute paths, main checkout): milestone plan (your milestone's exit criteria), eng spec, test plan, holistic architecture, milestone ledger. Cross-milestone seams you touch: <from the final validation, or none>. Out of scope — don't fix: <`out_of_scope_findings` in files you touch, or none>. Toolchain: <commands>. Baseline failure set: <list or path>. `concurrent_tests: <true|false>`. Run pre-flight, the per-task cycle for every task, then the full suite, updating your milestone ledger as you go. Return: status (`ready_for_gate` / `halted`), branch head SHA, full-suite result vs baseline, one line per task, and the last commit of each planned PR."
 
 **When `concurrent_tests: false`:** tell workers to run only targeted tests during the task cycle and to return `ready_for_full_suite` instead of running the full suite. The orchestrator then runs each milestone's full suite in its workspace one at a time and records the result in that milestone's ledger.
 
@@ -30,6 +30,7 @@ Merge each milestone that passed its gate into the integration branch, one at a 
 After each successful merge, set `last_green_commit` to the new integration head, mark the milestone `done`, and remove its worktree (`git worktree remove`). Keep the milestone branch until the run ends.
 
 ### 5. Advance or stop
+- **A spike just merged** → re-run the drift check (Stage 0 step 5) for every milestone that depends on it, giving each checker the spike's `spike-findings.md`. Major drift → hard-stop: the spike disproved a later milestone's premise, and re-planning needs a human.
 - Every milestone in the batch `done` → next batch / layer.
 - A milestone is **unrecoverable** (budget exhausted, major drift, scope explosion, non-progress, escalated gate) → stop dispatching new work. Let siblings already in flight finish their gate; merge the ones that pass. Then **hard-stop** per the control spine. Nothing that depends on the failed milestone starts.
 

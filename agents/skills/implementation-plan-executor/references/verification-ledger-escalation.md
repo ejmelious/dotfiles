@@ -22,11 +22,15 @@ All ledgers live in the main checkout under `.ai-dev/implementation-plan/<featur
 - `integration_branch`, `last_green_commit` (the integration branch's last green merge — the safe fallback)
 - the layers and batches from Stage 0
 - per milestone: status (`pending` / `in_progress` / `in_gate` / `done` / `halted`), branch, workspace path, `start_commit`, gate cycles used, merge commit
+- the PR stack from Stage 2: each branch, its base, and whether the per-milestone fallback was used
 - `run_status` — `running` / `complete` / `halted`
 
 **Milestone ledger — `milestone-<N>/ledger.md` (that milestone's worker only):**
 - minor drift from Stage 0 and pre-flight, and how it was adapted
 - per task: status, commit(s), acceptance criteria satisfied, tests covering it, self-correction attempts used
+- the last commit of each planned PR
+- open decisions reached: the choice made and why
+- exit criteria confirmed
 - full-suite results; gate findings received and how each was fixed
 
 One writer per file means parallel workers never conflict.
@@ -82,10 +86,12 @@ On an unrecoverable wall, **stop the run**: dispatch no new milestones or batche
 ```markdown
 # Implementation Report — <feature>
 ## Summary — milestones completed, layers run in parallel, total commits, suite status
-## Traceability matrix — requirement → milestone → task → commit(s) → test(s)
+## PR stack — in merge order: branch, base, the tasks and requirements it covers, its size. Merge bottom-up; after each squash merge, merge `main` into the next branch before merging it.
+## Traceability matrix — requirement → milestone → task → commit(s) → test(s), planned vs actual
+## Open-decision choices — each non-blocking decision the run settled: the choice and why
 ## Architecture conformance — adherence to the holistic architecture; any accepted minor drift
 ## TypeScript review — per milestone: Critical/High found and fixed; High findings that need an engineer; Medium/Low counts; links to each milestone's typescript-review.md
 ## Baseline note — pre-existing failures carried (if any)
-## What's ready — integration branch + commits ready to push, and the milestone branches that can be deleted
-## Follow-ups & accepted risks
+## What's ready — the PR stack, ready to push; its top branch has the same tree as the integration branch. The integration and milestone branches can be deleted once the stack is pushed.
+## Follow-ups & accepted risks — High TypeScript findings that need an engineer; test-plan coverage gaps and accepted risks; Phase 5 outstanding concerns and safety flags; `out_of_scope_findings` (left untouched)
 ```

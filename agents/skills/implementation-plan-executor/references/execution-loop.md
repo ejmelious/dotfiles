@@ -10,7 +10,9 @@ For each task in the order the eng spec's task list defines:
 
 2. **Test-first (where a test is specified).** Write or extend that test *before* implementing, and run it to **watch it fail**. A test that passes before the code exists is testing nothing. Where the test plan didn't pre-specify a test, add one alongside the implementation.
 
-3. **Implement** what the eng spec specifies — no more and no less. Honor its reuse-vs-net-new decisions and the architecture. Scope explosion is an unrecoverable trigger, not a license to keep going.
+3. **Implement** what the eng spec specifies — no more and no less. Honor its reuse-vs-net-new decisions and the architecture, and the error handling and edge cases it lists. Anything in its "Not doing" list is off-limits, even when it looks like an obvious improvement; so are the out-of-scope findings you were given. Scope explosion is an unrecoverable trigger, not a license to keep going.
+
+   **Non-blocking open decisions** (in the eng spec or the manifest): don't stop. Take the option the plan recommends; if it names none, take the one most consistent with the holistic architecture. Record the choice and why in your milestone ledger.
 
 4. **Verify (inner loop)** — the task's targeted tests plus typecheck/lint. The previously-failing test should now pass.
 
@@ -18,11 +20,13 @@ For each task in the order the eng spec's task list defines:
 
 6. **Confirm acceptance criteria** — explicitly check each one is met. Tests passing and criteria met are both required.
 
-7. **Commit** per the eng spec's commit plan, staging files by explicit path. Commit locally — never push.
+7. **Commit** per the eng spec's commit plan, staging files by explicit path. Commit locally — never push. Keep each planned PR's commits contiguous and in plan order, so every PR is a clean range on the branch, and record each PR's last commit in the ledger.
 
 8. **Update the milestone ledger** — task status, commit(s), criteria satisfied, tests covering it.
 
-After the last task, run the full suite in the workspace (unless told `concurrent_tests: false`) and return `ready_for_gate`.
+After the last task, confirm each of the milestone's **exit criteria** (milestone plan) is met — task-level criteria passing doesn't guarantee it. Then run the full suite in the workspace (unless told `concurrent_tests: false`) and return `ready_for_gate`.
+
+**Spike milestones** answer questions rather than ship behavior. Write the answers, with evidence, to `.execution/milestone-<N>/spike-findings.md`. Commit only code the eng spec says ships; throwaway exploration stays off the branch.
 
 **TypeScript fix rules apply throughout** — not only when fixing review findings. Never make code compile or tests pass with `as any`, `as unknown as T`, a new non-null `!`, `@ts-ignore` / `@ts-expect-error`, `eslint-disable`, loosened tsconfig, or a weakened or deleted test. Validate data at trust boundaries instead of asserting its type.
 
@@ -31,8 +35,12 @@ After the last task, run the full suite in the workspace (unless told `concurren
 The gate replaces the human checkpoint, so it must be independent: reviewers are fresh subagents that see only the result, never the worker's reasoning. Fire both reviewers **in parallel**:
 
 ### Reviewer A — acceptance & architecture
-Inputs: the eng spec, task list, acceptance criteria, test plan, holistic architecture, the milestone diff (`start_commit..branch head`), and the full-suite result. Ask it to actively try to falsify:
-- **Every acceptance criterion** for every task is met — actually, not approximately.
+Inputs: the milestone's exit criteria (milestone plan), the eng spec, task list, acceptance criteria, test plan, holistic architecture, the cross-milestone seams it touches, the milestone diff (`start_commit..branch head`), the milestone ledger, and the full-suite result. Ask it to actively try to falsify:
+- **Every acceptance criterion** for every task is met — actually, not approximately — and so is every **exit criterion** of the milestone.
+- **Scope** — nothing from the eng spec's "Not doing" list was built, and nothing beyond the spec was added. The error handling and edge cases the spec lists are implemented and tested.
+- **Seams** — each cross-milestone seam this milestone touches matches the other side: the merged code, or the other milestone's eng spec if it isn't built yet.
+- **Open-decision choices** recorded in the ledger are consistent with the plan and the architecture.
+- **Spikes:** the findings answer every question the spike was for, with evidence.
 - The **full suite is green** (no new failures beyond the baseline set).
 - **Architecture conformance** — no drift from the holistic architecture; reuse honored; net-new introduced cleanly.
 - **No regressions** — the milestone's changes are self-consistent and nothing earlier broke.

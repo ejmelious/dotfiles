@@ -100,7 +100,7 @@ open_decisions: []                   # each entry: {summary, blocking: true|fals
 out_of_scope_findings: []            # optional — security/hygiene issues surfaced but not in scope
 ```
 
-After Phase 2, each milestone carries: `id`, `name`, `size`, `depends_on: [<ids>]`, `status: not_started`, plus artifact pointers and `touches: [<paths>]` as Phase 3 lands.
+After Phase 2, each milestone carries: `id`, `name`, `size`, `depends_on: [<ids>]`, `status: not_started`, `kind: spike` on de-risking spikes, plus artifact pointers and `touches: [<paths>]` as Phase 3 lands.
 
 ### When the manifest gets touched
 
