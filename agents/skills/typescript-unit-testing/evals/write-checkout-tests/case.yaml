@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: write-checkout-tests
+expected_outcome: |
+  A src/checkout.test.ts using Vitest. The cart repository (the app's own
+  database) is replaced by an in-memory fake or stub, and the tests check
+  the resulting state (the cart is saved as checked_out), not that
+  findById/save were called. The payment gateway (an external, unmanaged
+  dependency) is a mock, and the charge command is asserted exactly: amount,
+  customer and idempotency key. Tests cover both sides of the free-shipping
+  boundary with hard-coded expected totals, and every error path with no
+  charge made. Fixtures are typed without casts. The tests pass, and they
+  are shown able to fail.
+context:
+  scaffold_script: place-files.sh
