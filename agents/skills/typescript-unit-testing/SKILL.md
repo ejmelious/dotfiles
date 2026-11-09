@@ -233,8 +233,10 @@ fail for the right reason at least once:
 
 Always pass `--log`, and report the probes as a short table (mutation →
 KILLED/SURVIVED) in your response or report, with the log's path. An
-ERROR (the command couldn't run or died from a signal) or TIMEOUT result is
-not evidence either way — fix the command or rerun before counting it. A claim
+ERROR (the command couldn't run or died from a signal), TIMEOUT or INVALID
+(the mutated file doesn't parse, so no tests ran) result is not evidence
+either way — fix the command or the find/replace text and rerun before
+counting it. A claim
 like "the tests catch 13 bugs" is only as good as the record behind it.
 "Tests pass" alone is not evidence the tests work.
 
