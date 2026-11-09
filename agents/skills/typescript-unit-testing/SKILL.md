@@ -232,7 +232,9 @@ fail for the right reason at least once:
   repo just to probe; the fix is the user's call.
 
 Always pass `--log`, and report the probes as a short table (mutation →
-KILLED/SURVIVED) in your response or report, with the log's path. A claim
+KILLED/SURVIVED) in your response or report, with the log's path. An
+ERROR (the command couldn't run or died from a signal) or TIMEOUT result is
+not evidence either way — fix the command or rerun before counting it. A claim
 like "the tests catch 13 bugs" is only as good as the record behind it.
 "Tests pass" alone is not evidence the tests work.
 

@@ -14,11 +14,20 @@
 // --find must match exactly once (or exactly once on --line). The original bytes are
 // saved to <file>.probe-backup before mutating and restored in a finally block and on
 // SIGINT/SIGTERM. If a backup already exists, the script refuses to run: restore it first.
-// No dependencies.
+//
+// The command runs in its own process group with output streamed to a temp file, so a
+// verbose test run can't overflow a buffer, and on timeout (or interruption) the whole
+// group — the shell and the test runner it started — is killed before the file is
+// restored. A command that can't be run or dies from a signal is reported as ERROR,
+// never as KILLED. Process groups make this macOS/Linux only. No dependencies.
 
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import {
+  appendFileSync, closeSync, copyFileSync, existsSync, fstatSync, mkdirSync, mkdtempSync,
+  openSync, readFileSync, readSync, rmSync, unlinkSync, writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { spawn } from 'node:child_process';
 
 function arg(name) {
   const i = process.argv.indexOf(`--${name}`);
@@ -63,16 +72,68 @@ if (line !== undefined) {
   mutated = original.replace(find, () => replace);
 }
 
-function run() {
-  const r = spawnSync(cmd, { shell: true, encoding: 'utf8', timeout: timeoutSec * 1000, env: { ...process.env, CI: '1', FORCE_COLOR: '0' } });
-  const output = `${r.stdout ?? ''}${r.stderr ?? ''}`;
-  return { code: r.status, timedOut: r.error?.code === 'ETIMEDOUT', tail: output.split('\n').slice(-25).join('\n') };
+const KILL_GRACE_MS = 2000;
+let activeGroup = null;
+
+function killGroup(pid, signal) {
+  try { process.kill(-pid, signal); } catch { /* group already gone */ }
+}
+
+function lastLines(path, count) {
+  const fd = openSync(path, 'r');
+  try {
+    const size = fstatSync(fd).size;
+    const length = Math.min(size, 64 * 1024);
+    const buf = Buffer.alloc(length);
+    readSync(fd, buf, 0, length, size - length);
+    return buf.toString('utf8').split('\n').slice(-count).join('\n');
+  } finally {
+    closeSync(fd);
+  }
+}
+
+// Resolves once the command has exited and nothing from its process group is left running.
+async function run() {
+  const outDir = mkdtempSync(join(tmpdir(), 'probe-mutation-'));
+  const outPath = join(outDir, 'output.log');
+  const outFd = openSync(outPath, 'w');
+  const child = spawn(cmd, {
+    shell: true,
+    detached: true, // own process group, so the runner's children can be killed with it
+    stdio: ['ignore', outFd, outFd],
+    env: { ...process.env, CI: '1', FORCE_COLOR: '0' },
+  });
+  closeSync(outFd);
+  activeGroup = child.pid ?? null;
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    killGroup(child.pid, 'SIGTERM');
+    setTimeout(() => killGroup(child.pid, 'SIGKILL'), KILL_GRACE_MS).unref();
+  }, timeoutSec * 1000);
+  const { code, signal, error } = await new Promise((resolve) => {
+    child.once('error', (err) => resolve({ code: null, signal: null, error: err }));
+    child.once('exit', (c, s) => resolve({ code: c, signal: s, error: null }));
+  });
+  clearTimeout(timer);
+  if (child.pid) killGroup(child.pid, 'SIGKILL'); // reap anything the shell left behind
+  activeGroup = null;
+  const tail = lastLines(outPath, 25);
+  rmSync(outDir, { recursive: true, force: true });
+  return { code, signal, error, timedOut, tail };
+}
+
+function describeFailure(r) {
+  if (r.error) return `could not run the command: ${r.error.message}`;
+  if (r.timedOut) return 'timed out';
+  if (r.signal) return `killed by ${r.signal}`;
+  return `exit ${r.code}`;
 }
 
 if (baseline) {
-  const b = run();
-  if (b.code !== 0) {
-    console.log(`BASELINE FAILED (exit ${b.code}${b.timedOut ? ', timed out' : ''}) — the command fails without any mutation, so a probe would prove nothing.\n${b.tail}`);
+  const b = await run();
+  if (b.code !== 0 || b.error || b.timedOut) {
+    console.log(`BASELINE FAILED (${describeFailure(b)}) — the command fails without any mutation, so a probe would prove nothing.\n${b.tail}`);
     process.exit(3);
   }
 }
@@ -84,13 +145,19 @@ function restore() {
   if (existsSync(backup)) unlinkSync(backup);
   restored = true;
 }
-for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { restore(); process.exit(130); });
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => {
+    if (activeGroup) killGroup(activeGroup, 'SIGKILL');
+    restore();
+    process.exit(130);
+  });
+}
 
 copyFileSync(file, backup);
 let result;
 try {
   writeFileSync(file, mutated);
-  result = run();
+  result = await run();
 } finally {
   restore();
 }
@@ -102,10 +169,17 @@ if (readFileSync(file, 'utf8') !== original) {
 }
 
 const where = line !== undefined ? `${file}:${line}` : file;
-const verdict = result.timedOut ? 'TIMEOUT' : result.code === 0 ? 'SURVIVED' : 'KILLED';
+// Only a normal non-zero exit is evidence that a test noticed the mutation.
+const verdict = result.error || (result.signal && !result.timedOut)
+  ? 'ERROR'
+  : result.timedOut ? 'TIMEOUT' : result.code === 0 ? 'SURVIVED' : 'KILLED';
 if (logFile) {
   mkdirSync(dirname(logFile), { recursive: true });
-  appendFileSync(logFile, JSON.stringify({ at: new Date().toISOString(), file, line, find, replace, cmd, result: verdict, exitCode: result.code }) + '\n');
+  appendFileSync(logFile, JSON.stringify({ at: new Date().toISOString(), file, line, find, replace, cmd, result: verdict, exitCode: result.code, signal: result.signal }) + '\n');
+}
+if (verdict === 'ERROR') {
+  console.log(`ERROR — ${JSON.stringify(find)} → ${JSON.stringify(replace)} in ${where}: ${describeFailure(result)}. This is not evidence either way; rerun or fix the command.\n--- last lines ---\n${result.tail}`);
+  process.exit(5);
 }
 if (result.timedOut) {
   console.log(`TIMEOUT — mutation ${JSON.stringify(find)} → ${JSON.stringify(replace)} in ${where} made the command hang (counts as killed, but check for an infinite loop).`);

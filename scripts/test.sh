@@ -306,4 +306,9 @@ grep -q "g=git" <<<"$zout" || fail "aliases not loaded"
 grep -q "(feature)" <<<"$zout" || fail "prompt doesn't show the git branch: $zout"
 pass "interactive zsh"
 
+# Skills that ship scripts test them with node:test, next to the script.
+node --test "$DOTFILES"/agents/skills/*/scripts/*.test.mjs > "$SANDBOX/skill-scripts.log" 2>&1 \
+    || { cat "$SANDBOX/skill-scripts.log"; fail "skill script tests"; }
+pass "skill script tests"
+
 echo "All checks passed."
