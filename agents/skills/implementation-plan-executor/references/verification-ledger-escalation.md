@@ -27,7 +27,8 @@ All ledgers live in the main checkout under `.ai-dev/implementation-plan/<featur
 
 **Milestone ledger — `milestone-<N>/ledger.md` (that milestone's worker only):**
 - minor drift from Stage 0 and pre-flight, and how it was adapted
-- per task: status, commit(s), acceptance criteria satisfied, tests covering it, self-correction attempts used
+- per task: status, commit(s), acceptance criteria satisfied, tests covering it and how each was proven able to fail (red-first, or probe results in `probes.jsonl`), self-correction attempts used
+- bugs found in code the task doesn't own, left for the gate
 - the last commit of each planned PR
 - open decisions reached: the choice made and why
 - exit criteria confirmed
@@ -44,7 +45,7 @@ One writer per file means parallel workers never conflict.
 ## Bounded self-correction
 
 - **Per-task budget:** 3 correction attempts by default, each a *different* hypothesis.
-- **Per-milestone gate budget:** 2 fix cycles by default, shared across both reviewers' findings and any merge-conflict or post-merge-red rework.
+- **Per-milestone gate budget:** 2 fix cycles by default, shared across all gate reviewers' findings and any merge-conflict or post-merge-red rework.
 - **Non-progress detection:** two consecutive attempts with the **same failure signature** is a loop, not progress — stop spending budget on it.
 
 These defaults are deliberately conservative; raising them trades safety for persistence.
@@ -56,7 +57,7 @@ A wall is **unrecoverable** when, after self-correction within budget:
 - **major plan-vs-code drift** — implementing as written would mean redesigning the approach;
 - **scope explosion** — the work vastly exceeds what the milestone defined;
 - the toolchain or a baseline can't be established;
-- a gate reviewer escalates (including a Critical TypeScript finding that needs an engineer);
+- a gate reviewer escalates (including a Critical TypeScript or unit-test finding that needs an engineer);
 - non-progress with budget exhausted.
 
 On an unrecoverable wall, **stop the run**: dispatch no new milestones or batches. Siblings already in flight finish their gate and merge if they pass, because their work is independent and already paid for. Nothing that depends on the failed milestone starts.
@@ -93,7 +94,8 @@ On an unrecoverable wall, **stop the run**: dispatch no new milestones or batche
 ## Open-decision choices — each non-blocking decision the run settled: the choice and why
 ## Architecture conformance — adherence to the holistic architecture; any accepted minor drift
 ## TypeScript review — per milestone: Critical/High found and fixed; High findings that need an engineer; Medium/Low counts; links to each milestone's typescript-review.md
+## Unit test audit — per milestone: Critical/High found and fixed; High findings that need an engineer; Medium/Low counts; probes run and killed; links to each milestone's test-audit.md and probes.jsonl
 ## Baseline note — pre-existing failures carried (if any)
 ## What's ready — the PR stack, ready to push; its top branch has the same tree as the integration branch. The integration and milestone branches can be deleted once the stack is pushed.
-## Follow-ups & accepted risks — High TypeScript findings that need an engineer; test-plan coverage gaps and accepted risks; Phase 5 outstanding concerns and safety flags; `out_of_scope_findings` (left untouched)
+## Follow-ups & accepted risks — High TypeScript and unit-test findings that need an engineer; test-plan coverage gaps and accepted risks; Phase 5 outstanding concerns and safety flags; `out_of_scope_findings` (left untouched)
 ```

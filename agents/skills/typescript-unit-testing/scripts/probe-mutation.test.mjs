@@ -17,10 +17,10 @@ function project() {
   return dir;
 }
 
-function probe(dir, cmd, extra = []) {
+function probe(dir, cmd, extra = [], { file = 'src.ts', find = '100', replace = '101' } = {}) {
   const r = spawnSync(
     process.execPath,
-    [script, '--file', 'src.ts', '--find', '100', '--replace', '101', '--cmd', cmd, '--log', 'probes.jsonl', ...extra],
+    [script, '--file', file, '--find', find, '--replace', replace, '--cmd', cmd, '--log', 'probes.jsonl', ...extra],
     { cwd: dir, encoding: 'utf8' },
   );
   const logPath = join(dir, 'probes.jsonl');
@@ -63,4 +63,32 @@ test('a timeout kills the whole process tree before the file is restored', async
   assert.equal(readFileSync(join(dir, 'src.ts'), 'utf8'), ORIGINAL);
   await sleep(3500);
   assert.equal(existsSync(join(dir, 'marker')), false, 'test runner child outlived the probe');
+});
+
+test('a mutation that breaks the syntax is INVALID, not KILLED, and runs no tests', () => {
+  const dir = project();
+  writeFileSync(join(dir, 'src.mjs'), 'export const limit = 100;\n');
+  const r = probe(dir, node("require('fs').writeFileSync('ran', 'x'); process.exit(1)"), ['--no-baseline'], {
+    file: 'src.mjs', find: '100', replace: '| |',
+  });
+  assert.match(r.stdout, /^INVALID/);
+  assert.equal(r.log[0].result, 'INVALID');
+  assert.equal(existsSync(join(dir, 'ran')), false, 'tests ran against an unparseable mutant');
+  assert.equal(readFileSync(join(dir, 'src.mjs'), 'utf8'), 'export const limit = 100;\n');
+});
+
+test('a mutation that keeps the syntax valid is still judged by the tests', () => {
+  const dir = project();
+  writeFileSync(join(dir, 'src.mjs'), 'export const limit = 100;\n');
+  const r = probe(dir, node('process.exit(1)'), ['--no-baseline'], { file: 'src.mjs', find: '100', replace: '101' });
+  assert.match(r.stdout, /^KILLED/);
+});
+
+test('a file the checker cannot parse even unmutated is probed without a syntax check', () => {
+  const dir = project();
+  // Valid only as a script fragment the checker doesn't support; the probe must not call it INVALID.
+  writeFileSync(join(dir, 'weird.vue'), '<template>100</template>\n');
+  const r = probe(dir, node('process.exit(1)'), ['--no-baseline'], { file: 'weird.vue', find: '100', replace: '101' });
+  assert.match(r.stdout, /^KILLED/);
+  assert.equal(r.log[0].syntaxCheck, 'unchecked');
 });

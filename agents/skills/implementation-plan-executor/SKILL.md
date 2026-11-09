@@ -56,9 +56,10 @@ The run is fully unattended. **There are no per-milestone human approvals.** The
 |------|---------|------|
 | **Orchestrator** (you) | manifest, ledgers, worker/reviewer summaries | Stage 0 baseline, scheduling layers, creating worktrees, dispatching workers and reviewers, merging, the main ledger, reports. Never edits product code. |
 | **Drift checker** (read-only, one per milestone, Stage 0) | one milestone's eng spec + the code it names | Reports minor / major plan-vs-code drift. |
-| **Milestone worker** (one per milestone) | its milestone's exit criteria, eng spec, test plan, holistic architecture, the cross-milestone seams it touches, milestone ledger, its worktree | Pre-flight, the per-task cycle (including building planned verifiers with the `verifier` skill), the milestone's full suite, fixing gate findings. |
+| **Milestone worker** (one per milestone) | its milestone's exit criteria, eng spec, test plan, holistic architecture, the cross-milestone seams it touches, milestone ledger, its worktree | Pre-flight, the per-task cycle (including building planned verifiers with the `verifier` skill and writing unit tests with `typescript-unit-testing`, each proven able to fail), the milestone's full suite, fixing gate findings. |
 | **Acceptance & architecture reviewer** (fresh, per gate) | exit criteria, spec, test plan, architecture, seams, milestone diff, suite results | Tries to falsify exit and acceptance criteria, test reality, scope ("Not doing"), seams, architecture conformance. |
 | **TypeScript reviewer** (fresh, per gate, when `.ts`/`.tsx` changed) | `typescript-review` in embedded, report-only mode | Rated type-safety findings on the milestone's commit range. |
+| **Unit-test reviewer** (fresh, per gate, when the milestone has a unit test design or changes TS test files) | `typescript-unit-testing` in embedded audit mode | Rated unit-test findings: tests that can't fail, criteria no test would catch breaking, planned bugs to catch that survive a re-probe. |
 
 If subagents aren't available (e.g. some Codex setups), the orchestrator plays every role itself, serially, in the main checkout — see the serial fallback in `references/stage-1-milestone-execution.md`.
 
@@ -67,7 +68,7 @@ If subagents aren't available (e.g. some Codex setups), the orchestrator plays e
 | Stage | Scope | What it does | Reference |
 |-------|-------|--------------|-----------|
 | 0 | once | Load + verify the plan, discover the toolchain and whether tests can run concurrently, green baseline, parallel drift checks, compute layers, integration branch, ledgers | `references/stage-0-ground-and-baseline.md` |
-| 1 | per layer | Worktrees → parallel milestone workers → two-reviewer gate per milestone → merge into the integration branch | `references/stage-1-milestone-execution.md` |
+| 1 | per layer | Worktrees → parallel milestone workers → review gate per milestone (acceptance, TypeScript, unit tests) → merge into the integration branch | `references/stage-1-milestone-execution.md` |
 | 2 | once | Full-suite green, planned-vs-actual traceability, whole-system conformance, the local PR stack, final report | `references/stage-2-end-to-end-validation.md` |
 
 The per-task cycle and the review gate are in `references/execution-loop.md`. The **control spine** (`references/verification-ledger-escalation.md`) defines green, the ledgers, budgets, the hard-stop, and the report formats — read it before Stage 0.
@@ -77,7 +78,8 @@ The per-task cycle and the review gate are in `references/execution-loop.md`. Th
 - **Code + commits** — on per-milestone branches (`<feature-slug>-m<N>`), following each eng spec's commit plan, merged into the integration branch (`<feature-slug>`).
 - **PR branches** — `<feature-slug>-pr<K>`, one per PR in the eng specs' commit plans, stacked in landing order and ready to push.
 - **Ledgers** — `.ai-dev/implementation-plan/<feature-slug>/.execution/ledger.md` (orchestrator) and `.execution/milestone-<N>/ledger.md` (each worker).
-- **Reviews** — `.execution/milestone-<N>/typescript-review.md` and `gate-review.md`.
+- **Reviews** — `.execution/milestone-<N>/gate-review.md`, `typescript-review.md` and `test-audit.md`.
+- **Probe logs** — `.execution/milestone-<N>/probes.jsonl`: every mutation probe the worker and the unit-test reviewer ran, with its result.
 - **Reports** — `.execution/implementation-report.md` on success, `.execution/escalation-report.md` on hard-stop.
 
 `.ai-dev/` is git-ignored, so it does **not** exist inside worktrees. Always pass workers and reviewers absolute paths into the main checkout's plan folder.

@@ -27,6 +27,7 @@ For each PR, write a **verification note** to `.execution/pr-notes/pr<K>.md`, re
 ## 4. Final report
 Write the implementation report (format in the control spine), including:
 - the TypeScript review section, aggregated from each milestone's `typescript-review.md`;
+- the unit test audit section, aggregated from each milestone's `test-audit.md` and `probes.jsonl`;
 - the PR stack, with each PR's verification note;
 - verifiers built in the run, and the proposed verifiers from every `verifier-escapes.md`;
 - the post-merge verification still to do;

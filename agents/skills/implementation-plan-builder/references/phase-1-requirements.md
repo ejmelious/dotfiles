@@ -33,6 +33,7 @@
 - Map blast radius: surfaces, data flows, and contracts touched.
 - Critique the refined PRD where it's infeasible, underspecified, or naive about the system.
 - **Audit the verifiers** for the area the PRD touches: run the `verifier` skill in embedded **audit** mode, scoped to the blast radius, and save the result as `verifier-audit.md`. It tells the plan which rungs it can lean on (and their exact commands) and which are missing or can't actually run.
+- **Optional — scan the unit tests the plan will lean on.** When the milestones will change TypeScript code whose existing unit tests they rely on as a safety net, run the `typescript-unit-testing` skill in embedded **scan** mode over the blast radius. Append its list to `verifier-audit.md` under "Unit tests the plan can't rely on". A test that can't fail on behaviour a milestone changes is either a test to fix first or an accepted risk. Skip it for new code or areas with no unit tests.
 
 **Produces — System Impact Analysis + PRD critique**, both in `.loops/loop-2-sr-engineer.md`. The impact analysis is a working document for Loop 3, not a final artifact; its conclusions land in `holistic-architecture.md`.
 
