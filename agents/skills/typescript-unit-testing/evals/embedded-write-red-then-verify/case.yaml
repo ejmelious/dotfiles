@@ -1,0 +1,11 @@
+schema_version: "1.1"
+name: embedded-write-red-then-verify
+expected_outcome: |
+  In the red phase, src/shipping.test.ts is written while src/shipping.ts
+  doesn't exist, and the run fails because the behaviour is missing, with no
+  probe attempted. src/shipping.ts is then implemented to the eng spec. In
+  the verify phase the tests go green, and every planned bug to catch is
+  probed into .ai-dev/probes.jsonl and KILLED. No probe ever hits a red
+  baseline.
+context:
+  scaffold_script: place-files.sh

@@ -10,13 +10,13 @@ For each task in the order the eng spec's task list defines:
 
 2. **Test-first (where a test is specified).** Write or extend that test *before* implementing, and run it to **watch it fail**. A test that passes before the code exists is testing nothing. Where the test plan didn't pre-specify a test, add one alongside the implementation.
 
-   **TypeScript unit tests** follow the `typescript-unit-testing` skill in embedded **write** mode, against the task's entry in the test plan's "Unit test design". Every planned *bug to catch*, and every test written after the code, gets a mutation probe logged to `<abs main checkout>/.ai-dev/implementation-plan/<feature-slug>/.execution/milestone-<N>/probes.jsonl`. A planned bug that survives means the test is weak: strengthen it before moving on. If a test exposes a bug in code this task doesn't own, don't encode the buggy behavior and don't fix it: record it in the milestone ledger as a finding for the gate.
+   **TypeScript unit tests** follow the `typescript-unit-testing` skill in embedded **write** mode, against the task's entry in the test plan's "Unit test design". Here, run its **`red`** phase: write the tests and watch each fail for the right reason. Don't probe yet; the code doesn't exist, and probes need a green baseline. (A task that only adds tests to existing code skips `red`; its tests are proven in step 4.) If a test exposes a bug in code this task doesn't own, don't encode the buggy behavior and don't fix it: record it in the milestone ledger as a finding for the gate.
 
 3. **Implement** what the eng spec specifies — no more and no less. Honor its reuse-vs-net-new decisions and the architecture, and the error handling and edge cases it lists. Anything in its "Not doing" list is off-limits, even when it looks like an obvious improvement; so are the out-of-scope findings you were given. Scope explosion is an unrecoverable trigger, not a license to keep going.
 
    **Non-blocking open decisions** (in the eng spec or the manifest): don't stop. Take the option the plan recommends; if it names none, take the one most consistent with the holistic architecture. Record the choice and why in your milestone ledger.
 
-4. **Verify (inner loop)** — the task's targeted tests plus typecheck/lint. The previously-failing test should now pass.
+4. **Verify (inner loop)** — the task's targeted tests plus typecheck/lint. The previously-failing test should now pass. For TypeScript unit tests, then run `typescript-unit-testing`'s **`verify`** phase: every planned *bug to catch*, and every test written after the code, gets a mutation probe logged to `<abs main checkout>/.ai-dev/implementation-plan/<feature-slug>/.execution/milestone-<N>/probes.jsonl`. A planned bug that survives means the test is weak: strengthen it and probe again before moving on.
 
 5. **Self-correct on failure** — within the per-task budget, each attempt a *different* hypothesis. Same failure signature twice → stop (non-progress). Budget exhausted → return `halted` with the evidence.
 

@@ -385,7 +385,7 @@ principles, translate the commands, and say so in the output.
 |------|--------|-------|---------|
 | **scan** | builder Phase 1 (optional) | repo + the paths in the PRD's blast radius | existing tests the plan can't lean on as a safety net |
 | **plan** | builder Phase 4 | a milestone's tasks and the acceptance criteria the verifier map assigned to unit or property tests, its eng spec, the codebase | the test plan's "Unit test design" section |
-| **write** | executor worker, per task | the task, its unit test design, the workspace, a probe-log path | the tests, each proven able to fail, with the probes logged |
+| **write** | executor worker, per task, in two phases | the task, its unit test design, the workspace, a probe-log path, the phase (`red` or `verify`) | `red`: the tests, failing for the right reason. `verify`: the tests green, each proven able to fail, with the probes logged |
 | **audit** | executor review gate (Reviewer C) | workspace, commit range, test plan, report path, full-suite result | a report-only audit of the tests the range added or changed |
 
 **scan** — run `scripts/scan-test-smells.mjs` over the tests that cover the
@@ -413,15 +413,29 @@ Also list what deliberately gets no unit test and why (glue covered by an
 integration test, declarations, framework behaviour). Keep it to what the
 acceptance criteria need; the builder's right-sized rule applies.
 
-**write** — Job 1 steps 4–6 for one task, against its unit test design.
-Test-first wherever the code doesn't exist yet: the red run is the proof.
-For every planned bug to catch, and for every test written after the code,
-run `scripts/probe-mutation.mjs` with `--log <the caller's probe-log path>`.
-A surviving planned mutant means the test is weak: strengthen it and probe
-again. If a test exposes a bug in existing code the task doesn't own,
-don't encode the buggy behaviour and don't fix it unasked — record it in
-the milestone ledger as a finding for the gate. Return one line per test:
-title, how it was proven (red-first or probe IDs), and any finding.
+**write** — Job 1 steps 4–6 for one task, against its unit test design,
+in two phases, because probes need a green baseline and test-first tests
+start red:
+
+- **`red`** (before the task's code is written): write the tests and run
+  them. Each must fail, and fail for the right reason: the behaviour is
+  missing. A missing module or export counts when the task is the one that
+  creates it; a typo, a wrong import path or a broken fixture doesn't. Return
+  one line per test with its failure message. Don't probe: the probe script refuses a red
+  baseline, and a red run is the proof at this point.
+- **`verify`** (after the caller has implemented the task): run the tests
+  green. Then, for every planned bug to catch — now concrete find/replace
+  text against the real code — and for every test written after the code,
+  run `scripts/probe-mutation.mjs` with `--log <the caller's probe-log
+  path>`. A surviving planned mutant means the test is weak: strengthen it
+  and probe again.
+
+When the code already exists (a task that only adds tests), skip `red` and
+run `verify` directly. In either phase, if a test exposes a bug in code the
+task doesn't own, don't encode the buggy behaviour and don't fix it unasked
+— record it in the milestone ledger as a finding for the gate. Return one
+line per test: title, how it was proven (red-first message, probe results),
+and any finding.
 
 **audit** — Job 2, report-only, scoped to the test files the commit range
 added or changed and the code they test. In order:
