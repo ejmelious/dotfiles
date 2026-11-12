@@ -1,0 +1,23 @@
+.github/workflows/check.yml
+  s_9857490888e592::t_f2e702612d1a68 32
+agents/skills/pre-queue-check/SKILL.md
+  s_9857490888e592::t_546fab38553929 1-40
+agents/skills/pre-queue-check/scripts/pre-queue-check.sh
+  s_9857490888e592::t_6d4e8c47d68ba3 1-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "74c8b40662e57071e1e033ae83f5adc958cf5be3",
+  "prompts": {},
+  "sessions": {
+    "s_9857490888e592": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_9857490888e592",
+        "model": "unknown"
+      },
+      "human_author": "Ethan Melious <89801249+ejmelious@users.noreply.github.com>"
+    }
+  }
+}
