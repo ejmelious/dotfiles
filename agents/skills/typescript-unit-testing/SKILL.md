@@ -154,6 +154,11 @@ Work out the case list before writing code, using the techniques in
 - **State transitions** — for reducers, state machines, and anything with
   status fields: each legal transition and the illegal ones that must be
   refused. Use the discriminated union to enumerate them.
+- **Partial failure after a side effect** — once a write, charge or send
+  has happened, fail each dependency of the remaining work on its own and
+  assert the caller still sees the committed outcome. Enumerate the
+  dependencies; mutation probes won't reveal a missing guard. See
+  `references/patterns.md` ("Choosing cases").
 - **Invariants → property tests.** When a rule holds for all inputs
   (round-trips, idempotence, ordering preserved, totals conserved, output
   always valid per schema), a property test with fast-check finds the case

@@ -283,6 +283,12 @@ Look for behaviour with no test that would fail if it broke:
   each to a test that checks its type/code.
 - Each variant of a discriminated union in reducers and handlers.
 - Parsers and guards at trust boundaries, with hostile and malformed input.
+- Partial failure after a side effect: for code that does more work after a
+  write has saved, each dependency of that later work failing on its own.
+  Find them by listing the awaited calls after the write
+  (`Promise.all([...])` entries, chained `.then`s). A `.catch` on only some
+  of them is the usual sign. Severity: High when the caller would report a
+  saved write as failed and retrying would repeat it.
 - Recently fixed bugs without a regression test (`git log --grep -i fix`).
 - Surviving mutants from a Stryker run or probes.
 
