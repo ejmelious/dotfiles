@@ -1,0 +1,25 @@
+agents/skills/typescript-unit-testing/SKILL.md
+  s_bd8126ae7c3c17::t_d0e7986591064c 258-261,284-288
+agents/skills/typescript-unit-testing/references/smells.md
+  s_bd8126ae7c3c17::t_7ace8a172fac67 203-211
+agents/skills/typescript-unit-testing/scripts/find-single-use-testutils.mjs
+  s_bd8126ae7c3c17::t_3c2cb4d6b9df86 1-125
+agents/skills/typescript-unit-testing/scripts/find-single-use-testutils.test.mjs
+  s_bd8126ae7c3c17::t_901ae34a049d98 1-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "d96d2d78dbd67071e9d029a1dc1c325986cda0bc",
+  "prompts": {},
+  "sessions": {
+    "s_bd8126ae7c3c17": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_bd8126ae7c3c17",
+        "model": "unknown"
+      },
+      "human_author": "Ethan Melious <89801249+ejmelious@users.noreply.github.com>"
+    }
+  }
+}
