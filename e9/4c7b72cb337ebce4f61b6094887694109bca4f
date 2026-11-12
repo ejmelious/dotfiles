@@ -1,0 +1,23 @@
+agents/skills/typescript-unit-testing/SKILL.md
+  s_d4d1593be53548::t_6b5b9241ae6d61 157-161
+agents/skills/typescript-unit-testing/references/patterns.md
+  s_d4d1593be53548::t_e4bd99cf39aff0 47-67
+agents/skills/typescript-unit-testing/references/smells.md
+  s_d4d1593be53548::t_07a6a115296492 286-291
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "e94c7b72cb337ebce4f61b6094887694109bca4f",
+  "prompts": {},
+  "sessions": {
+    "s_d4d1593be53548": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_d4d1593be53548",
+        "model": "unknown"
+      },
+      "human_author": "Ethan Melious <89801249+ejmelious@users.noreply.github.com>"
+    }
+  }
+}
