@@ -1,0 +1,21 @@
+agents/skills/typescript-review/SKILL.md
+  s_3449fa9fa09202::t_52fb03c69ca6bf 68-73
+agents/skills/typescript-review/references/vanta-monorepo.md
+  s_3449fa9fa09202::t_6424f8940055c9 1-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "957e4d446e81466d610a4e150c883a03ce88d818",
+  "prompts": {},
+  "sessions": {
+    "s_3449fa9fa09202": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_3449fa9fa09202",
+        "model": "unknown"
+      },
+      "human_author": "Ethan Melious <89801249+ejmelious@users.noreply.github.com>"
+    }
+  }
+}
