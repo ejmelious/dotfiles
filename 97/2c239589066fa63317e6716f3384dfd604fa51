@@ -1,0 +1,19 @@
+agents/skills/implementation-plan-executor/references/execution-loop.md
+  s_817287f1299f04::t_278578832864c0 15-16,52-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "972c239589066fa63317e6716f3384dfd604fa51",
+  "prompts": {},
+  "sessions": {
+    "s_817287f1299f04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_817287f1299f04",
+        "model": "unknown"
+      },
+      "human_author": "Ethan Melious <89801249+ejmelious@users.noreply.github.com>"
+    }
+  }
+}
