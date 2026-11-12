@@ -14,6 +14,8 @@ For each task in the order the eng spec's task list defines:
 
 3. **Implement** what the eng spec specifies — no more and no less. Honor its reuse-vs-net-new decisions and the architecture, and the error handling and edge cases it lists. Anything in its "Not doing" list is off-limits, even when it looks like an obvious improvement; so are the out-of-scope findings you were given. Scope explosion is an unrecoverable trigger, not a license to keep going.
 
+   **Search before writing a helper.** Before adding a function that parses, normalizes or adapts a shape other code also handles (an error envelope, an ID format, a date, a response body), search for an existing one. Search by the shape's most distinctive access, not by a name you'd choose: `rg -n "networkError.result" packages/`, not `rg parseError`. Check shared packages first, then sibling packages. When you find one, reuse it if it fits. If it almost fits, record in the ledger why it doesn't, and note it as a follow-up candidate. Write a near-duplicate only when the eng spec calls it net-new.
+
    **Non-blocking open decisions** (in the eng spec or the manifest): don't stop. Take the option the plan recommends; if it names none, take the one most consistent with the holistic architecture. Record the choice and why in your milestone ledger.
 
 4. **Verify (inner loop)** — the task's targeted tests plus typecheck/lint. The previously-failing test should now pass. For TypeScript unit tests, then run `typescript-unit-testing`'s **`verify`** phase: every planned *bug to catch*, and every test written after the code, gets a mutation probe logged to `<abs main checkout>/.ai-dev/implementation-plan/<feature-slug>/.execution/milestone-<N>/probes.jsonl`. A planned bug that survives means the test is weak: strengthen it and probe again before moving on.
@@ -49,6 +51,8 @@ Inputs: the milestone's exit criteria (milestone plan), the eng spec, task list,
 - **Architecture conformance** — no drift from the holistic architecture; reuse honored; net-new introduced cleanly.
 - **No regressions** — the milestone's changes are self-consistent and nothing earlier broke.
 - **Tests are real** — they assert the behavior, not tautologies. Reviewer C audits TypeScript unit tests in depth; A checks that the tests exercise the criteria at the levels the test plan names.
+- **Partial failure after a side effect** — where code does more work after a write, charge or send has happened, each dependency of that later work has a test failing it on its own. A `.catch` on only some of them is a defect: the caller would report a saved write as failed.
+- **Duplication** — no new helper repeats one the repo already has. Search by the distinctive access the new code makes, and name the existing helper in the finding.
 - **Verifiers** — every **pre-merge** verifier the test plan maps to this milestone ran and passed; each new verifier has its red and green proof in the ledger; no existing verifier was weakened. **Post-merge** entries (shadow, load, canary, rollout) can't run yet: check only that each has a verification plan stating the evidence it should produce. They go to the PR notes in Stage 2, and their absence of results is not a defect.
 - **Escapes** — if it finds a defect the verifiers all passed, it says so. The orchestrator runs the `verifier` skill's **escape-note** on it and appends the result to `.execution/milestone-<N>/verifier-escapes.md`. The run doesn't build these; they go to the final report.
 

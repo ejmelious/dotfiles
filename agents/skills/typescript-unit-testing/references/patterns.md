@@ -44,6 +44,27 @@ distinct bug:
   shows.
 - **Regression** — the exact input from a bug report, titled after the
   behaviour (not the ticket number alone).
+- **Partial failure after a side effect** — when code commits something
+  (a write, a charge, a sent message) and then does more work (reading the
+  result back, enriching it, notifying), list every dependency of that
+  later work and fail each one **on its own**. Assert the outcome the
+  caller should see once the side effect has happened. Usually that means
+  the call still succeeds and only the extra work is degraded. A test that
+  fails only one dependency proves that one guard exists, not that the
+  others do. Mutation probes can't find this gap: a missing `.catch` leaves
+  no line to mutate. Only enumerating the dependencies finds it.
+
+  ```ts
+  it.each([
+    ["assignees", { loadAssignees: rejects }],
+    ["integrations", { loadIntegrations: rejects }],
+    ["availability", { loadAvailability: rejects }],
+  ])("reports the saved write when loading %s afterwards fails", async (_, deps) => {
+    const result = await setAssignee(input, { ...workingDeps, ...deps });
+    expect(result).toEqual({ saved: true, row: null });
+    expect(store.saved).toEqual([input]);
+  });
+  ```
 
 ## 2. Typed fixtures without casts
 

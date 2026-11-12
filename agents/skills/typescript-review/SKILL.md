@@ -65,6 +65,12 @@ Read, don't assume:
 - **Lint config** (typescript-eslint presets in use) and any repo
   conventions (CLAUDE.md, AGENTS.md, CONTRIBUTING, existing patterns). A repo
   convention beats a book preference; note the tension at Low if it matters.
+- **Repo idiom notes**: in Vanta's monorepo (root `AGENTS.md` titled
+  "Vanta Monorepo — Agent Guide"), read `references/vanta-monorepo.md`
+  before rating findings. Its lint rules forbid some fixes that general advice
+  recommends (indexed-access types, `z.infer`, `#graphql/schema/*` imports),
+  and it names the alternatives to recommend instead. Before suggesting any
+  fix, check that it passes the repo's lint (`pnpm eslint <file>`).
 - **Commands**: the package scripts for typecheck, lint and test. If there is
   no typecheck script, `npx tsc --noEmit -p <tsconfig>` using the repo's own
   installed TypeScript. Never install packages to run a check without asking.

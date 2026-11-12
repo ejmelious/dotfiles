@@ -154,6 +154,11 @@ Work out the case list before writing code, using the techniques in
 - **State transitions** — for reducers, state machines, and anything with
   status fields: each legal transition and the illegal ones that must be
   refused. Use the discriminated union to enumerate them.
+- **Partial failure after a side effect** — once a write, charge or send
+  has happened, fail each dependency of the remaining work on its own and
+  assert the caller still sees the committed outcome. Enumerate the
+  dependencies; mutation probes won't reveal a missing guard. See
+  `references/patterns.md` ("Choosing cases").
 - **Invariants → property tests.** When a rule holds for all inputs
   (round-trips, idempotence, ordering preserved, totals conserved, output
   always valid per schema), a property test with fast-check finds the case
@@ -252,6 +257,10 @@ plainly which file still carries a planted bug.
 - Run the new tests repeated and shuffled
   (`vitest run <file> --repeats 10 --sequence.shuffle`) to flush out order
   dependence and timing flakiness.
+- If you added or changed a `*.testutil.*` file, run
+  `scripts/find-single-use-testutils.mjs <package> --only=<those files>`.
+  Move a helper with one consumer into that test, or say in the PR which
+  upcoming change will share it.
 - Report: the behaviours covered (as the test titles), what you deliberately
   didn't test and why, the mutation probes and their results, commands run
   with results, and anything you found in the production code while testing
@@ -273,6 +282,11 @@ Run the heuristic scanner for leads, then read the tests:
 ```bash
 node <skill-dir>/scripts/scan-test-smells.mjs <dir> [--assert-helpers=expectOk,assertValid]
 ```
+
+For test helper modules, also run
+`node <skill-dir>/scripts/find-single-use-testutils.mjs <dir>`: it lists
+`*.testutil.*` files with one importer or none (add `--exports` for unused
+exports in shared ones).
 
 It flags candidates (no assertion, weak-only assertions, un-awaited
 `rejects`/`resolves`, try/catch assertions, `.only`/`.skip`, casts, internal

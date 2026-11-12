@@ -200,6 +200,15 @@ Verdict: Merge/Delete the duplicate unit-level case. Severity: Low.
 Not redundant coverage, but maintenance cost — extract a typed factory.
 Verdict: Strengthen (refactor). Severity: Low.
 
+**D4. Shared helper with one consumer.** A `*.testutil.ts` that one test file
+imports, or a helper that only forwards its arguments (`build(x) => new X(x)`).
+The module and the indirection cost a reader a jump and protect nothing.
+Confirm: `node <skill-dir>/scripts/find-single-use-testutils.mjs <package> [--only=<files>]`.
+Fix: move the helper into its consumer until a second suite needs it. Keep a
+forwarding wrapper only when it does something a reader can't see, and say
+what in a one-line comment (e.g. it keeps a lint false positive to one line).
+Verdict: Merge. Severity: Low.
+
 ## E. Non-determinism and isolation
 
 **E1. Real time.** `Date.now()`, `new Date()`, real `setTimeout` sleeps,
@@ -283,6 +292,12 @@ Look for behaviour with no test that would fail if it broke:
   each to a test that checks its type/code.
 - Each variant of a discriminated union in reducers and handlers.
 - Parsers and guards at trust boundaries, with hostile and malformed input.
+- Partial failure after a side effect: for code that does more work after a
+  write has saved, each dependency of that later work failing on its own.
+  Find them by listing the awaited calls after the write
+  (`Promise.all([...])` entries, chained `.then`s). A `.catch` on only some
+  of them is the usual sign. Severity: High when the caller would report a
+  saved write as failed and retrying would repeat it.
 - Recently fixed bugs without a regression test (`git log --grep -i fix`).
 - Surviving mutants from a Stryker run or probes.
 
