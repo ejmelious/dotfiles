@@ -200,6 +200,15 @@ Verdict: Merge/Delete the duplicate unit-level case. Severity: Low.
 Not redundant coverage, but maintenance cost — extract a typed factory.
 Verdict: Strengthen (refactor). Severity: Low.
 
+**D4. Shared helper with one consumer.** A `*.testutil.ts` that one test file
+imports, or a helper that only forwards its arguments (`build(x) => new X(x)`).
+The module and the indirection cost a reader a jump and protect nothing.
+Confirm: `node <skill-dir>/scripts/find-single-use-testutils.mjs <package> [--only=<files>]`.
+Fix: move the helper into its consumer until a second suite needs it. Keep a
+forwarding wrapper only when it does something a reader can't see, and say
+what in a one-line comment (e.g. it keeps a lint false positive to one line).
+Verdict: Merge. Severity: Low.
+
 ## E. Non-determinism and isolation
 
 **E1. Real time.** `Date.now()`, `new Date()`, real `setTimeout` sleeps,
