@@ -1,6 +1,6 @@
 ---
 name: typescript-unit-testing
-description: Expert TypeScript unit testing with two jobs. (1) Write unit tests that earn their place — behaviour-focused, deterministic, typed without casts, mocking only what must be mocked, and each one proven able to fail. (2) Audit existing tests for validity and necessity — find tests that can't fail, restate their mocks, pin implementation details, duplicate each other, are flaky, or only test the compiler or the framework — give each a Keep / Strengthen / Rewrite / Merge / Delete verdict backed by evidence (mutation probes, not coverage %), and name the untested behaviour that matters. Built for Vitest (v3–v5): its mocking, fake timers, config, type tests and version differences. Use this whenever the user asks to write, add, improve, review, audit, clean up, de-flake or prune unit tests in a .ts/.tsx codebase; asks "are these tests any good", "do we need all these tests", "why didn't our tests catch this", "is this test useful"; mentions *.test.ts / *.spec.ts files, Vitest, vi.mock / vi.fn / vi.spyOn, mocks, fakes, fixtures, snapshots, fake timers, coverage, mutation testing, Stryker or fast-check; or wants test-first work on TypeScript code — even if they never say "unit test". Not for end-to-end/browser suites, load tests, or reviewing production-code types (use typescript-review for that).
+description: Expert TypeScript unit testing with two jobs. (1) Write unit tests that earn their place — behaviour-focused, deterministic, typed without casts, mocking only what must be mocked, and each one proven able to fail. (2) Audit existing tests for validity and necessity — find tests that can't fail, restate their mocks, pin implementation details, duplicate each other, are flaky, or only test the compiler or the framework — give each a Keep / Strengthen / Rewrite / Merge / Delete verdict backed by evidence (mutation probes, not coverage %), and name the untested behaviour that matters. Built for Vitest (v3–v5): its mocking, fake timers, config, type tests and version differences. Use this whenever the user asks to write, add, improve, review, audit, clean up, de-flake or prune unit tests in a .ts/.tsx codebase; asks "are these tests any good", "do we need all these tests", "why didn't our tests catch this", "is this test useful"; mentions *.test.ts / *.spec.ts files, Vitest, vi.mock / vi.fn / vi.spyOn, mocks, fakes, fixtures, snapshots, fake timers, coverage, mutation testing, Stryker or fast-check; or wants test-first work on TypeScript code — even if they never say "unit test". Also runs embedded inside implementation-plan-builder (scan, plan) and implementation-plan-executor (write, audit) — see "Embedded mode". Not for end-to-end/browser suites, load tests, or reviewing production-code types (use typescript-review for that).
 ---
 
 # TypeScript Unit Testing
@@ -238,8 +238,10 @@ fail for the right reason at least once:
 
 Always pass `--log`, and report the probes as a short table (mutation →
 KILLED/SURVIVED) in your response or report, with the log's path. An
-ERROR (the command couldn't run or died from a signal) or TIMEOUT result is
-not evidence either way — fix the command or rerun before counting it. A claim
+ERROR (the command couldn't run or died from a signal), TIMEOUT or INVALID
+(the mutated file doesn't parse, so no tests ran) result is not evidence
+either way — fix the command or the find/replace text and rerun before
+counting it. A claim
 like "the tests catch 13 bugs" is only as good as the record behind it.
 "Tests pass" alone is not evidence the tests work.
 
@@ -384,6 +386,95 @@ for leaking state — mocks not restored, module-level singletons, fake
 timers left installed, unclosed handles (`--reporter=hanging-process` shows what keeps the process
 alive). `references/vitest.md` has the details. Don't "fix" a failure by changing the expected value until you've
 shown the old expectation was wrong.
+
+## Embedded mode (called by another skill)
+
+`implementation-plan-builder` and `implementation-plan-executor` call this
+skill as one step of an unattended run. You're in embedded mode when the
+caller's prompt says so and names a mode, a scope and output paths. Ask no
+questions — where you would ask, take the safest option and record the
+assumption in your output. Write only to the paths you're given (plus test
+files in **write**). If the repo doesn't use Vitest, apply the same
+principles, translate the commands, and say so in the output.
+
+| Mode | Caller | Input | Returns |
+|------|--------|-------|---------|
+| **scan** | builder Phase 1 (optional) | repo + the paths in the PRD's blast radius | existing tests the plan can't lean on as a safety net |
+| **plan** | builder Phase 4 | a milestone's tasks and the acceptance criteria the verifier map assigned to unit or property tests, its eng spec, the codebase | the test plan's "Unit test design" section |
+| **write** | executor worker, per task, in two phases | the task, its unit test design, the workspace, a probe-log path, the phase (`red` or `verify`) | `red`: the tests, failing for the right reason. `verify`: the tests green, each proven able to fail, with the probes logged |
+| **audit** | executor review gate (Reviewer C) | workspace, commit range, test plan, report path, full-suite result | a report-only audit of the tests the range added or changed |
+
+**scan** — run `scripts/scan-test-smells.mjs` over the tests that cover the
+blast-radius paths, and read the leads that guard behaviour the milestones
+will change or rely on. Return a short list: test, the behaviour the plan
+would assume it protects, why it can't (the smell, confirmed by reading),
+and what that means for the plan (a test to fix first, or a risk to accept).
+Don't run probes; this is a cheap read, not an audit.
+
+**plan** — Job 1 steps 1–3 only; write no code. For each test:
+
+- the **title** as a behaviour sentence, and the acceptance criterion it proves;
+- the **cases**: partitions, both sides of every boundary, error paths,
+  transitions, and a property test where an invariant holds;
+- the **double for each dependency** — real, fake, stub or mock — with the
+  reason, per `references/principles.md` §4;
+- where the **expected values** come from (spec, worked by hand);
+- **bugs to catch**: one to three concrete mutations the test must fail on,
+  written so the executor can probe them literally —
+  `src/pricing.ts: ">= 50_00" → "> 50_00"`. When the code doesn't exist
+  yet, name the mutation by intent ("threshold made exclusive") and the
+  worker turns it into find/replace text.
+
+Also list what deliberately gets no unit test and why (glue covered by an
+integration test, declarations, framework behaviour). Keep it to what the
+acceptance criteria need; the builder's right-sized rule applies.
+
+**write** — Job 1 steps 4–6 for one task, against its unit test design,
+in two phases, because probes need a green baseline and test-first tests
+start red:
+
+- **`red`** (before the task's code is written): write the tests and run
+  them. Each must fail, and fail for the right reason: the behaviour is
+  missing. A missing module or export counts when the task is the one that
+  creates it; a typo, a wrong import path or a broken fixture doesn't. Return
+  one line per test with its failure message. Don't probe: the probe script refuses a red
+  baseline, and a red run is the proof at this point.
+- **`verify`** (after the caller has implemented the task): run the tests
+  green. Then, for every planned bug to catch — now concrete find/replace
+  text against the real code — and for every test written after the code,
+  run `scripts/probe-mutation.mjs` with `--log <the caller's probe-log
+  path>`. A surviving planned mutant means the test is weak: strengthen it
+  and probe again.
+
+When the code already exists (a task that only adds tests), skip `red` and
+run `verify` directly. In either phase, if a test exposes a bug in code the
+task doesn't own, don't encode the buggy behaviour and don't fix it unasked
+— record it in the milestone ledger as a finding for the gate. Return one
+line per test: title, how it was proven (red-first message, probe results),
+and any finding.
+
+**audit** — Job 2, report-only, scoped to the test files the commit range
+added or changed and the code they test. In order:
+
+1. Inventory with the scanner, then read every test in scope.
+2. Check each acceptance criterion the test plan assigns to a unit test has
+   a test that would fail if the criterion broke.
+3. Probe every planned bug to catch, plus up to two more per acceptance
+   criterion where a test looks weak. **Probe in a scratch copy of the
+   workspace** (copy it to a temp dir, symlink `node_modules`), never in
+   the workspace itself: other gate reviewers read it at the same time.
+   Log every probe.
+4. Give each test a verdict, and rate findings with this skill's severity
+   scale. IDs are `UT-01`, `UT-02`…
+5. For each Critical/High, give a fix route: `worker` with the fix in
+   enough detail to act on, or `needs engineer` when the fix depends on a
+   product decision about intended behaviour.
+
+Write the report from `assets/audit-report-template.md` to the caller's
+path, with the probe log beside it. Return only the headline counts and one
+line per Critical/High: ID, severity, `path:line`, fix route. Make no
+edits and no commits. On re-review, check only the cited IDs against the
+new commits and report each as resolved or not, with the evidence.
 
 ## Reference files
 

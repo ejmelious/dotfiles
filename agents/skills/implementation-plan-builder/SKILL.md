@@ -23,7 +23,7 @@ Run phases in order. Each phase consumes the prior phases' final artifacts plus 
 | 1 | Requirements & Architecture | Refined PRD, Holistic Architecture | Staff PM → Sr. Engineer → Architect | **G1** | `references/phase-1-requirements.md` |
 | 2 | Milestone Breakdown | Milestone Plan | TPM → Tech Lead | — | `references/phase-2-milestone-breakdown.md` |
 | 3 | Eng Spec, Tasks & Architecture Review *(per milestone)* | Eng Spec (design + tasks + commit plan) | Sr. Engineer → Codebase Expert → Architecture Review | **G2** per milestone | `references/phase-3-eng-spec-and-architecture-review.md` |
-| 4 | Verification & Test *(per milestone)* | Test Plan (verifier map, verifiers to build, post-merge verification, tests) | Test Architect — single pass | **G3** if 3+ milestones | `references/phase-4-quality-and-test.md` |
+| 4 | Verification & Test *(per milestone)* | Test Plan (verifier map, verifiers to build, post-merge verification, unit test design, tests) | Test Architect — single pass | **G3** if 3+ milestones | `references/phase-4-quality-and-test.md` |
 | 5 | Final Validation & Sign-off *(whole plan)* | Final Validation | Architect — single pass | — | `references/phase-5-validation.md` |
 
 When entering a phase, **read that phase's reference file in full before doing anything else.**
@@ -41,7 +41,7 @@ Run each loop as an independent subagent with a fresh context so later loops are
 
 ## Verifiers
 
-A **verifier** is an automated check an agent can run to prove its work correct — types and lint rules through tests, golden data, contracts, browser checks, shadow runs, load checks, canaries and rollout gates. The plan identifies which verifiers prove each milestone, and which are missing. The `verifier` skill owns the ladder and the bar a verifier must meet; this skill calls it embedded: **audit** in Phase 1, **map** in Phase 4. Under the right-sized principle, every verifier the plan adds names the failure mode it catches.
+A **verifier** is an automated check an agent can run to prove its work correct — types and lint rules through tests, golden data, contracts, browser checks, shadow runs, load checks, canaries and rollout gates. The plan identifies which verifiers prove each milestone, and which are missing. The `verifier` skill owns the ladder and the bar a verifier must meet; this skill calls it embedded: **audit** in Phase 1, **map** in Phase 4. Where the map puts a criterion on the unit or property-test rung in TypeScript code, the `typescript-unit-testing` skill designs those tests (embedded **plan** in Phase 4; an optional **scan** in Phase 1 flags existing tests that can't fail): `verifier` picks the rung, `typescript-unit-testing` designs what goes on it, including the bugs each test must catch. Under the right-sized principle, every verifier the plan adds names the failure mode it catches.
 
 ## Simplification gates
 

@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: embedded-scan
+expected_outcome: |
+  .ai-dev/unit-test-scan.md lists the webhook and parser tests the plan can't
+  rely on: "rejects malformed webhooks" (an assertion in an un-awaited
+  .catch), "handles failed payments" (no assertion) and "rejects a body that
+  is not an object" (an assertion inside catch with no guard). Each entry
+  names the behaviour the plan would assume it protects and what that means
+  for the plan. Discount and splitBill tests sit outside the blast radius and
+  are left out or only briefly noted. No probes are run and no files change.
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: embedded-audit-milestone
+expected_outcome: |
+  A report-only audit at .ai-dev/test-audit.md of the tests branch m2 added.
+  The two planned bugs to catch survive: the $50.00 boundary (">= 50_00" →
+  "> 50_00") isn't tested, because the test uses 60_00, and the negative-subtotal
+  test asserts inside a catch with no guard. Both are reported as Critical or
+  High with UT- IDs and a worker fix route. Probes run in a scratch copy, so
+  the workspace stays unchanged with no commits. The reply holds only the
+  headline counts and one line per Critical/High.
+context:
+  scaffold_script: place-files.sh
