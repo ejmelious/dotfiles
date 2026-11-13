@@ -11,7 +11,10 @@ git clone git@github.com:ejmelious/dotfiles.git ~/dotfiles
 
 On Ona, set this repo as your dotfiles repository. Ona clones it to `~/dotfiles`
 and runs `install.sh` without a terminal, then runs `post-start-install.sh` once EFS
-is mounted. Pushed changes only reach **new** environments.
+is mounted. Pushed changes only reach **new** environments. To update an existing
+one, run `dotfiles-update`: it fast-forwards `~/dotfiles` from `origin/main`, then
+re-runs both scripts. It refuses if `~/dotfiles` isn't on `main` or has uncommitted
+changes.
 
 `install.sh` is safe to re-run. It installs no software and never prompts. Anything it
 replaces is moved to `~/.dotfiles-backup/<timestamp>/`, never deleted. If the old
@@ -35,7 +38,7 @@ into `~/.zshrc.local`.
 | `zsh/.zshrc` | `~/.zshrc` | **sourced** from a small plain file, so tools that add to `~/.zshrc` don't break it |
 | `git/config`, `git/ignore` | `~/.config/git/` | link |
 | `git/ona.gitconfig` | `~/.config/git/config.ona` | link, **Ona only** |
-| `bin/dotfiles-doctor`, `bin/agent-notify`, `bin/dotfiles-ai-dev-link` | `~/.local/bin/` | link |
+| `bin/dotfiles-doctor`, `bin/agent-notify`, `bin/dotfiles-ai-dev-link`, `bin/dotfiles-update` | `~/.local/bin/` | link |
 
 `<claude dir>` is `~/.claude` by default, which is what Ona and most machines use.
 

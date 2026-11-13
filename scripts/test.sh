@@ -342,4 +342,32 @@ grep -q "g=git" <<<"$zout" || fail "aliases not loaded"
 grep -q "(feature)" <<<"$zout" || fail "prompt doesn't show the git branch: $zout"
 pass "interactive zsh"
 
+# dotfiles-update: pulls a clean main and re-runs install, refuses otherwise.
+# Runs last because it relinks $HOME to a scratch clone.
+up="$SANDBOX/upstream"; mkdir -p "$up"
+tar -C "$DOTFILES" --exclude=.git -cf - . | tar -C "$up" -xf -
+git -C "$up" init -q -b main
+git -C "$up" add -A
+git -C "$up" -c user.name=t -c user.email=t@example.com commit -q -m base
+git clone -q "$up" "$SANDBOX/dot"
+"$SANDBOX/dot/bin/dotfiles-update" > "$SANDBOX/upd1.log" 2>&1 || { cat "$SANDBOX/upd1.log"; fail "dotfiles-update, nothing to pull"; }
+grep -q "Already up to date" "$SANDBOX/upd1.log" || fail "dotfiles-update didn't report being up to date"
+is_link_to "$HOME/.local/bin/dotfiles-update" "$SANDBOX/dot/bin/dotfiles-update"
+echo new > "$up/NEW"
+git -C "$up" add NEW
+git -C "$up" -c user.name=t -c user.email=t@example.com commit -q -m new
+"$HOME/.local/bin/dotfiles-update" > "$SANDBOX/upd2.log" 2>&1 || { cat "$SANDBOX/upd2.log"; fail "dotfiles-update with a new commit"; }
+[ -f "$SANDBOX/dot/NEW" ] || fail "dotfiles-update didn't pull"
+grep -q "Dotfiles installed" "$SANDBOX/upd2.log" || fail "dotfiles-update didn't run install.sh"
+echo local >> "$SANDBOX/dot/README.md"
+echo newer > "$up/NEW"
+git -C "$up" -c user.name=t -c user.email=t@example.com commit -q -am newer
+"$SANDBOX/dot/bin/dotfiles-update" > "$SANDBOX/upd3.log" 2>&1 && fail "dotfiles-update pulled over uncommitted changes"
+[ "$(cat "$SANDBOX/dot/NEW")" = new ] || fail "dotfiles-update pulled over uncommitted changes"
+git -C "$SANDBOX/dot" checkout -q -- README.md
+git -C "$SANDBOX/dot" checkout -q -b feature
+"$SANDBOX/dot/bin/dotfiles-update" > "$SANDBOX/upd4.log" 2>&1 && fail "dotfiles-update pulled on a branch other than main"
+grep -q "not main" "$SANDBOX/upd4.log" || fail "dotfiles-update didn't say why it refused"
+pass "dotfiles-update"
+
 echo "All checks passed."
