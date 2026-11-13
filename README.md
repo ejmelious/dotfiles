@@ -35,7 +35,7 @@ into `~/.zshrc.local`.
 | `zsh/.zshrc` | `~/.zshrc` | **sourced** from a small plain file, so tools that add to `~/.zshrc` don't break it |
 | `git/config`, `git/ignore` | `~/.config/git/` | link |
 | `git/ona.gitconfig` | `~/.config/git/config.ona` | link, **Ona only** |
-| `bin/dotfiles-doctor`, `bin/agent-notify` | `~/.local/bin/` | link |
+| `bin/dotfiles-doctor`, `bin/agent-notify`, `bin/dotfiles-ai-dev-link` | `~/.local/bin/` | link |
 
 `<claude dir>` is `~/.claude` by default, which is what Ona and most machines use.
 
@@ -116,8 +116,9 @@ if it's missing, and touches nothing else: `forced_login_method = "chatgpt"`,
 ## Global gitignore
 
 `git/ignore` ignores `.DS_Store`, `.env`, `.env.local`, `.claude/settings.local.json`
-and `.ai-dev/` in every repo. `AGENTS.md` tells agents to put plans, notes and research
-in `.ai-dev/`, so scratch work never lands in a commit.
+and `.ai-dev` (a directory, or on Ona a symlink to EFS) in every repo. `AGENTS.md`
+tells agents to put plans, notes and research in `.ai-dev/`, so scratch work never
+lands in a commit.
 
 ## Ona and EFS
 
@@ -128,6 +129,12 @@ in `.ai-dev/`, so scratch work never lands in a commit.
   whole folder corrupts Codex state.
 - `~/.config/gh` — GitHub CLI login.
 - Shell history, via `HISTFILE` in `.zshrc`.
+- `.ai-dev` — `bin/dotfiles-ai-dev-link` makes each `/workspaces/<repo>/.ai-dev` a
+  link to `$EFS_MOUNT_POINT/ai-dev/<repo>`, so plans are shared by every environment.
+  Worktrees share their main repo's folder. An existing local `.ai-dev` is merged in
+  without overwriting files already on EFS and kept as
+  `/workspaces/<dir>.ai-dev-backup-<time>`. Ona may not have cloned every repo when
+  the hook runs; run `dotfiles-ai-dev-link` by hand after cloning one.
 
 Ona sets `CLAUDE_CONFIG_DIR=/efs/.claude`, so Claude Code's whole folder, login
 included, already lives on EFS. `install.sh` runs before the mount and can't set that

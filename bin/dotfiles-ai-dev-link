@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Points each repo's .ai-dev at a folder on EFS, so plans and notes survive
+# the environment and are shared by every Ona environment that mounts it:
+#
+#   /workspaces/<repo>/.ai-dev -> $EFS_MOUNT_POINT/ai-dev/<repo>
+#
+# Worktrees share their main repo's folder. A local .ai-dev that is a real
+# directory is merged in without overwriting anything already on EFS, then
+# moved to /workspaces/<dir>.ai-dev-backup-<time> rather than deleted.
+#
+# post-start-install.sh runs this, but Ona may not have cloned every repo by
+# then, so it is also linked to ~/.local/bin/dotfiles-ai-dev-link to re-run
+# by hand. Safe to re-run. WORKSPACES_ROOT overrides /workspaces.
+set -euo pipefail
+
+# Follow the ~/.local/bin link back to the repo.
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+    target="$(readlink "$src")"
+    case "$target" in /*) src="$target" ;; *) src="$(dirname "$src")/$target" ;; esac
+done
+DOTFILES="$(cd "$(dirname "$src")/.." && pwd)"
+# shellcheck source=lib/common.sh
+. "$DOTFILES/lib/common.sh"
+
+EFS="${EFS_MOUNT_POINT:-}"
+ROOT="${WORKSPACES_ROOT:-/workspaces}"
+if [ -z "$EFS" ]; then
+    skip "EFS_MOUNT_POINT not set; .ai-dev stays local"
+    exit 0
+fi
+# Plans written to an unmounted directory would vanish with the environment.
+if [ "${DOTFILES_ASSUME_MOUNTED:-}" != "1" ]; then
+    if command -v mountpoint &>/dev/null && ! mountpoint -q "$EFS"; then
+        warn "$EFS is not mounted; .ai-dev stays local"
+        exit 0
+    fi
+fi
+if [ ! -d "$ROOT" ]; then
+    skip "$ROOT doesn't exist; no repos to link"
+    exit 0
+fi
+
+for dir in "$ROOT"/*/; do
+    dir="${dir%/}"
+    [ -e "$dir/.git" ] || continue
+    common="$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || continue
+    # A worktree's common dir is its main repo's .git, so worktrees map to
+    # the main repo's name.
+    if [ "$(basename "$common")" = ".git" ]; then
+        name="$(basename "$(dirname "$common")")"
+    else
+        name="$(basename "$dir")"
+    fi
+    dst="$EFS/ai-dev/$name"
+    here="$dir/.ai-dev"
+
+    if [ -L "$here" ]; then
+        [ "$(readlink "$here")" = "$dst" ] || warn "$here links to $(readlink "$here"), not $dst; leaving it"
+        continue
+    fi
+    if [ -e "$here" ] && [ ! -d "$here" ]; then
+        warn "$here is not a directory; leaving it"
+        continue
+    fi
+
+    mkdir -p "$dst"
+    if [ -d "$here" ]; then
+        # --ignore-existing: what's already on EFS wins; the backup keeps the
+        # local version of any file that differs.
+        rsync -a --ignore-existing "$here/" "$dst/"
+        backup_dir="$dir.ai-dev-backup-$(date +%Y%m%d-%H%M%S)"
+        mv "$here" "$backup_dir"
+        info "Merged $here into $dst; local copy kept at $backup_dir"
+    fi
+    ln -s "$dst" "$here"
+    ok "Linked $here -> $dst"
+done

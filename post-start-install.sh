@@ -8,6 +8,8 @@
 #   ~/.codex/auth.json  Codex login. Only this file: sharing all of ~/.codex
 #                       across environments corrupts its local state.
 #   ~/.config/gh        GitHub CLI config and login.
+#   .ai-dev             Each /workspaces repo's plans and notes, via
+#                       bin/dotfiles-ai-dev-link.
 #
 # Shell history is shared via HISTFILE in .zshrc rather than a symlink,
 # because zsh replaces the history file on save and would break a link.
@@ -77,6 +79,7 @@ fi
 
 share_file ".codex/auth.json"
 share_dir ".config/gh"
+"$DOTFILES/bin/dotfiles-ai-dev-link"
 
 # Ona points Claude Code at a folder on EFS through CLAUDE_CONFIG_DIR.
 # install.sh runs before the mount and skips folders that don't exist yet,

@@ -9,6 +9,8 @@ trap '[ -n "${KEEP:-}" ] || rm -rf "$SANDBOX"' EXIT
 export HOME="$SANDBOX/home"
 mkdir -p "$HOME" "$SANDBOX/tmp"
 export TMPDIR="$SANDBOX/tmp" DOTFILES_SKIP_CHSH=1
+# Never let the EFS hook scan the real /workspaces.
+export WORKSPACES_ROOT="$SANDBOX/workspaces"
 unset CLAUDE_CONFIG_DIR CLAUDE_CONFIG_DIRS IS_ON_ONA EFS_MOUNT_POINT USE_EFS_HOME \
     JIRA_API_TOKEN JIRA_EMAIL JIRA_SITE XDG_CONFIG_HOME GIT_CONFIG_GLOBAL GH_TOKEN ZDOTDIR
 
@@ -104,6 +106,8 @@ pass "Codex keeps an existing notify"
 git config --global --includes --get feature.manyFiles >/dev/null && fail "Ona git settings applied off Ona"
 git init -q "$SANDBOX/ig" && mkdir -p "$SANDBOX/ig/pkg/.ai-dev" && touch "$SANDBOX/ig/pkg/.ai-dev/plan.md"
 git -C "$SANDBOX/ig" check-ignore -q pkg/.ai-dev/plan.md || fail ".ai-dev not globally ignored"
+ln -s "$SANDBOX" "$SANDBOX/ig/.ai-dev"
+git -C "$SANDBOX/ig" check-ignore -q .ai-dev || fail ".ai-dev symlink not globally ignored"
 is_link_to "$HOME/.local/bin/dotfiles-doctor" "$DOTFILES/bin/dotfiles-doctor"
 is_link_to "$HOME/.local/bin/agent-notify" "$DOTFILES/bin/agent-notify"
 pass "git config and helper links"
@@ -236,6 +240,38 @@ grep -qxF "notify = [\"$HOME/.local/bin/agent-notify\", \"Codex\"]" "$HOME/.code
 grep -q '@HOME@' "$HOME/.codex/config.toml" && fail "seeded Codex config kept the @HOME@ placeholder"
 # GNU stat first: on Linux `stat -f` means filesystem status and doesn't fail.
 [ "$(stat -c %a "$HOME/.codex/config.toml" 2>/dev/null || stat -f %Lp "$HOME/.codex/config.toml")" = 600 ] || fail "seeded Codex config not mode 600"
+
+# .ai-dev: every repo links to EFS, worktrees share the main repo's folder,
+# and a local .ai-dev is merged in without losing either side.
+ws="$WORKSPACES_ROOT"; mkdir -p "$ws"
+git init -q -b main "$ws/proj"
+git -C "$ws/proj" -c user.name=t -c user.email=t@example.com commit -q --allow-empty -m init
+git -C "$ws/proj" worktree add -q "$ws/proj-wt" -b wt
+git init -q -b main "$ws/other"
+mkdir -p "$ws/other/.ai-dev" "$EFS_MOUNT_POINT/ai-dev/other" "$ws/not-a-repo"
+echo local-only > "$ws/other/.ai-dev/local.md"
+echo local > "$ws/other/.ai-dev/both.md"
+echo efs > "$EFS_MOUNT_POINT/ai-dev/other/both.md"
+"$DOTFILES/post-start-install.sh" > "$SANDBOX/aidev1.log" 2>&1 || { cat "$SANDBOX/aidev1.log"; fail "post-start with repos"; }
+is_link_to "$ws/proj/.ai-dev" "$EFS_MOUNT_POINT/ai-dev/proj"
+is_link_to "$ws/proj-wt/.ai-dev" "$EFS_MOUNT_POINT/ai-dev/proj"
+is_link_to "$ws/other/.ai-dev" "$EFS_MOUNT_POINT/ai-dev/other"
+[ -d "$EFS_MOUNT_POINT/ai-dev/proj" ] || fail "EFS .ai-dev folder not created"
+[ ! -e "$ws/not-a-repo/.ai-dev" ] || fail "linked .ai-dev in a directory that isn't a repo"
+[ "$(cat "$ws/other/.ai-dev/local.md")" = local-only ] || fail "local .ai-dev file not merged onto EFS"
+[ "$(cat "$ws/other/.ai-dev/both.md")" = efs ] || fail "local .ai-dev overwrote a file already on EFS"
+backups=("$ws"/other.ai-dev-backup-*)
+[ "$(cat "${backups[0]}/both.md" 2>/dev/null)" = local ] || fail "local .ai-dev not kept as a backup"
+"$DOTFILES/post-start-install.sh" > "$SANDBOX/aidev2.log" 2>&1 || fail "post-start with repos, run 2"
+grep -qE "Linked|Merged" "$SANDBOX/aidev2.log" && fail ".ai-dev linking not idempotent"
+is_link_to "$HOME/.local/bin/dotfiles-ai-dev-link" "$DOTFILES/bin/dotfiles-ai-dev-link"
+"$HOME/.local/bin/dotfiles-ai-dev-link" >/dev/null 2>&1 || fail "dotfiles-ai-dev-link via ~/.local/bin"
+# Never write plans to an EFS path that isn't mounted.
+git init -q -b main "$ws/late"
+DOTFILES_ASSUME_MOUNTED='' "$DOTFILES/bin/dotfiles-ai-dev-link" >/dev/null 2>&1 || fail "dotfiles-ai-dev-link with EFS unmounted"
+if command -v mountpoint &>/dev/null; then
+    [ ! -e "$ws/late/.ai-dev" ] || fail "linked .ai-dev to an unmounted EFS path"
+fi
 
 unset EFS_MOUNT_POINT CLAUDE_CONFIG_DIR
 "$DOTFILES/post-start-install.sh" >/dev/null 2>&1 || fail "post-start should exit 0 without EFS"
