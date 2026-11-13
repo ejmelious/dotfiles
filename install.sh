@@ -139,6 +139,8 @@ link "$DOTFILES/git/config" "$HOME/.config/git/config"
 link "$DOTFILES/git/ignore" "$HOME/.config/git/ignore"
 link "$DOTFILES/bin/dotfiles-doctor" "$HOME/.local/bin/dotfiles-doctor"
 link "$DOTFILES/bin/agent-notify" "$HOME/.local/bin/agent-notify"
+link "$DOTFILES/bin/dotfiles-ai-dev-link" "$HOME/.local/bin/dotfiles-ai-dev-link"
+link "$DOTFILES/bin/dotfiles-update" "$HOME/.local/bin/dotfiles-update"
 
 # A displaced ~/.zshrc may have held exported secrets. Don't move them
 # automatically; point at where they belong.

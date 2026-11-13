@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck
-        run: shellcheck -x install.sh post-start-install.sh lib/common.sh lib/jira-auth.sh bin/dotfiles-doctor bin/agent-notify scripts/test.sh claude/hooks/guard-bash.sh claude/statusline.sh agents/skills/pre-queue-check/scripts/pre-queue-check.sh
+        run: shellcheck -x install.sh post-start-install.sh lib/common.sh lib/jira-auth.sh bin/dotfiles-doctor bin/agent-notify bin/dotfiles-ai-dev-link bin/dotfiles-update scripts/test.sh claude/hooks/guard-bash.sh claude/statusline.sh agents/skills/pre-queue-check/scripts/pre-queue-check.sh
 
   secrets:
     runs-on: ubuntu-latest

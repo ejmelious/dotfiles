@@ -3,4 +3,5 @@
 .env
 .env.local
 # Agent scratch space: plans, notes, research. See ~/.agents/AGENTS.md.
-.ai-dev/
+# No trailing slash: on Ona .ai-dev is a symlink to EFS, which `.ai-dev/` misses.
+.ai-dev

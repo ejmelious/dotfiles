@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Brings an existing environment up to date: pulls ~/dotfiles, then re-runs
+# install.sh and post-start-install.sh. Ona only does this for new
+# environments. Linked to ~/.local/bin/dotfiles-update.
+#
+# Pulls only a clean checkout of main, fast-forward only, so it never mixes
+# a pull into local work. Both scripts are safe to re-run.
+set -euo pipefail
+
+# Follow the ~/.local/bin link back to the repo.
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+    target="$(readlink "$src")"
+    case "$target" in /*) src="$target" ;; *) src="$(dirname "$src")/$target" ;; esac
+done
+DOTFILES="$(cd "$(dirname "$src")/.." && pwd)"
+# shellcheck source=lib/common.sh
+. "$DOTFILES/lib/common.sh"
+
+branch="$(git -C "$DOTFILES" branch --show-current)"
+if [ "$branch" != "main" ]; then
+    warn "$DOTFILES is on '${branch:-a detached HEAD}', not main; switch to main to update"
+    exit 1
+fi
+# Untracked files are fine: a fast-forward that would overwrite one fails on its own.
+if [ -n "$(git -C "$DOTFILES" status --porcelain --untracked-files=no)" ]; then
+    warn "$DOTFILES has uncommitted changes; commit or stash them to update"
+    exit 1
+fi
+
+before="$(git -C "$DOTFILES" rev-parse HEAD)"
+git -C "$DOTFILES" pull --ff-only --quiet
+after="$(git -C "$DOTFILES" rev-parse HEAD)"
+if [ "$before" = "$after" ]; then
+    info "Already up to date at ${after:0:7}"
+else
+    info "Updated ${before:0:7} -> ${after:0:7}"
+fi
+
+"$DOTFILES/install.sh"
+"$DOTFILES/post-start-install.sh"
