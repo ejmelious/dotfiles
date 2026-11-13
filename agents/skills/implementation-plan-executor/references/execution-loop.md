@@ -10,15 +10,19 @@ For each task in the order the eng spec's task list defines:
 
 2. **Test-first (where a test is specified).** Write or extend that test *before* implementing, and run it to **watch it fail**. A test that passes before the code exists is testing nothing. Where the test plan didn't pre-specify a test, add one alongside the implementation.
 
+   **TypeScript unit tests** follow the `typescript-unit-testing` skill in embedded **write** mode, against the task's entry in the test plan's "Unit test design". Here, run its **`red`** phase: write the tests and watch each fail for the right reason. Don't probe yet; the code doesn't exist, and probes need a green baseline. (A task that only adds tests to existing code skips `red`; its tests are proven in step 4.) If a test exposes a bug in code this task doesn't own, don't encode the buggy behavior and don't fix it: record it in the milestone ledger as a finding for the gate.
+
 3. **Implement** what the eng spec specifies — no more and no less. Honor its reuse-vs-net-new decisions and the architecture, and the error handling and edge cases it lists. Anything in its "Not doing" list is off-limits, even when it looks like an obvious improvement; so are the out-of-scope findings you were given. Scope explosion is an unrecoverable trigger, not a license to keep going.
+
+   **Search before writing a helper.** Before adding a function that parses, normalizes or adapts a shape other code also handles (an error envelope, an ID format, a date, a response body), search for an existing one. Search by the shape's most distinctive access, not by a name you'd choose: `rg -n "networkError.result" packages/`, not `rg parseError`. Check shared packages first, then sibling packages. When you find one, reuse it if it fits. If it almost fits, record in the ledger why it doesn't, and note it as a follow-up candidate. Write a near-duplicate only when the eng spec calls it net-new.
 
    **Non-blocking open decisions** (in the eng spec or the manifest): don't stop. Take the option the plan recommends; if it names none, take the one most consistent with the holistic architecture. Record the choice and why in your milestone ledger.
 
-4. **Verify (inner loop)** — the task's targeted tests plus typecheck/lint. The previously-failing test should now pass.
+4. **Verify (inner loop)** — the task's targeted tests plus typecheck/lint. The previously-failing test should now pass. For TypeScript unit tests, then run `typescript-unit-testing`'s **`verify`** phase: every planned *bug to catch*, and every test written after the code, gets a mutation probe logged to `<abs main checkout>/.ai-dev/implementation-plan/<feature-slug>/.execution/milestone-<N>/probes.jsonl`. A planned bug that survives means the test is weak: strengthen it and probe again before moving on.
 
 5. **Self-correct on failure** — within the per-task budget, each attempt a *different* hypothesis. Same failure signature twice → stop (non-progress). Budget exhausted → return `halted` with the evidence.
 
-6. **Confirm acceptance criteria** — explicitly check each one is met. Tests passing and criteria met are both required.
+6. **Confirm acceptance criteria** — explicitly check each one is met. Tests passing and criteria met are both required, and so is every planned bug to catch for this task showing `KILLED` in the probe log.
 
 7. **Commit** per the eng spec's commit plan, staging files by explicit path. Commit locally — never push. Keep each planned PR's commits contiguous and in plan order, so every PR is a clean range on the branch, and record each PR's last commit in the ledger.
 
@@ -34,7 +38,7 @@ After the last task, confirm each of the milestone's **exit criteria** (mileston
 
 ## Review gate (orchestrator)
 
-The gate replaces the human checkpoint, so it must be independent: reviewers are fresh subagents that see only the result, never the worker's reasoning. Fire both reviewers **in parallel**:
+The gate replaces the human checkpoint, so it must be independent: reviewers are fresh subagents that see only the result, never the worker's reasoning. Fire the reviewers that apply **in parallel**: A always, B and C when their conditions hold.
 
 ### Reviewer A — acceptance & architecture
 Inputs: the milestone's exit criteria (milestone plan), the eng spec, task list, acceptance criteria, test plan, holistic architecture, the cross-milestone seams it touches, the milestone diff (`start_commit..branch head`), the milestone ledger, and the full-suite result. Ask it to actively try to falsify:
@@ -46,7 +50,9 @@ Inputs: the milestone's exit criteria (milestone plan), the eng spec, task list,
 - The **full suite is green** (no new failures beyond the baseline set).
 - **Architecture conformance** — no drift from the holistic architecture; reuse honored; net-new introduced cleanly.
 - **No regressions** — the milestone's changes are self-consistent and nothing earlier broke.
-- **Tests are real** — they assert the behavior, not tautologies.
+- **Tests are real** — they assert the behavior, not tautologies. Reviewer C audits TypeScript unit tests in depth; A checks that the tests exercise the criteria at the levels the test plan names.
+- **Partial failure after a side effect** — where code does more work after a write, charge or send has happened, each dependency of that later work has a test failing it on its own. A `.catch` on only some of them is a defect: the caller would report a saved write as failed.
+- **Duplication** — no new helper repeats one the repo already has. Search by the distinctive access the new code makes, and name the existing helper in the finding.
 - **Verifiers** — every **pre-merge** verifier the test plan maps to this milestone ran and passed; each new verifier has its red and green proof in the ledger; no existing verifier was weakened. **Post-merge** entries (shadow, load, canary, rollout) can't run yet: check only that each has a verification plan stating the evidence it should produce. They go to the PR notes in Stage 2, and their absence of results is not a defect.
 - **Escapes** — if it finds a defect the verifiers all passed, it says so. The orchestrator runs the `verifier` skill's **escape-note** on it and appends the result to `.execution/milestone-<N>/verifier-escapes.md`. The run doesn't build these; they go to the final report.
 
@@ -64,9 +70,16 @@ Its findings map to the gate like this:
 | 🟠 High marked "needs engineer" | doesn't block; carried to the final report's follow-ups |
 | 🟡 Medium / ⚪ Low | doesn't block; counted in the final report |
 
+### Reviewer C — unit tests (when the milestone has a unit test design, or the diff touches TypeScript test files)
+Run the `typescript-unit-testing` skill in **embedded audit** mode (see that skill's "Embedded mode" section). It runs when the test plan has a "Unit test design" for this milestone or the diff adds or changes `*.test.ts(x)` / `*.spec.ts(x)` files. Give it: the workspace path, the commit range `start_commit..branch head`, the test plan, the worker's probe log, the report path `.execution/milestone-<N>/test-audit.md` (absolute, main checkout), and the full-suite result. It reads the tests in scope and checks that every acceptance criterion assigned to a unit test has a test that would fail if the criterion broke. It re-probes the planned bugs to catch in a scratch copy of the workspace, never in the workspace itself, because A and B are reading it at the same time. It makes no edits and no commits.
+
+What counts as Critical/High here: a test that can't fail guarding an acceptance criterion; an acceptance criterion assigned to a unit test that no test would catch breaking; a planned bug to catch that survives; a flaky test. Coupling to implementation, redundancy and weak-but-working oracles are Medium/Low.
+
+Its findings map to the gate exactly like B's: Critical/High fixable by the worker → `fix`; Critical marked "needs engineer" (usually: the intended behavior is a product decision) → `escalate`; High marked "needs engineer" → doesn't block, carried to the final report's follow-ups; Medium/Low → doesn't block, counted in the final report.
+
 ### Combining the verdicts
-- Both `pass` (B's only findings non-blocking) → **Pass**: merge per Stage 1.
-- Either `escalate` → **Escalate**: unrecoverable → hard-stop per the control spine.
-- Otherwise → **Fix**: send the worker one combined, numbered list of defects (A's and B's, with B's IDs like `TS-03`). The worker fixes them with the per-task cycle — test-first where the finding has a runtime failure scenario; a type-only fix is proven with typecheck — commits each fix with the finding ID in the body, re-runs the full suite, and returns `ready_for_gate`. Then re-review: A re-checks the cited defects plus the new diff; B re-checks only its cited findings against the new commits. Bounded by the gate budget.
+- Every reviewer that ran returns `pass`, with only non-blocking findings from B and C → **Pass**: merge per Stage 1.
+- Any `escalate` → **Escalate**: unrecoverable → hard-stop per the control spine.
+- Otherwise → **Fix**: send the worker one combined, numbered list of defects: A's, B's (IDs like `TS-03`) and C's (IDs like `UT-02`). The worker fixes them with the per-task cycle — test-first where the finding has a runtime failure scenario; a type-only fix is proven with typecheck; a strengthened test is proven by probing the bug it missed — commits each fix with the finding ID in the body, re-runs the full suite, and returns `ready_for_gate`. Then re-review: A re-checks the cited defects plus the new diff; B and C re-check only their cited findings against the new commits. Bounded by the gate budget.
 
 Only a clean **Pass** lets a milestone merge. There is no "merge with known blocking issues" path.

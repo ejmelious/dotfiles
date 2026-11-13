@@ -30,7 +30,8 @@ Milestones are independent here — run them in parallel.
   Every verifier to build names the failure mode it catches; one that can't is cut.
 - **Test strategy** — what is verified at which level, and why. Use the levels the repo already runs, plus the verifiers this milestone builds.
 - **Coverage plan** — map every task's acceptance criteria to the test(s) that prove it, weighted toward the highest blast-radius / data-sensitivity paths.
-- **Concrete unit and e2e tests** — grounded in the codebase's actual frameworks, fixtures, and CI.
+- **Unit test design** — for the criteria the verifier map assigns to unit or property tests in TypeScript code, run the `typescript-unit-testing` skill in embedded **plan** mode with the tasks, those criteria and the eng spec. It returns, per test: a behaviour title and the criterion it proves, the cases (boundaries, error paths, transitions, properties), the double for each dependency and why, where expected values come from, and the **bugs to catch** — concrete mutations the test must fail on, which the executor probes literally and the gate checks. It also lists what deliberately gets no unit test. Paste it into the test plan's "Unit test design" section. The `verifier` skill decides *which* rung proves a criterion; `typescript-unit-testing` designs the tests on the unit rung.
+- **Concrete e2e tests** — grounded in the codebase's actual frameworks, fixtures, and CI.
 - Don't add tests no acceptance criterion needs.
 - Flag coverage gaps and accepted risks.
 
@@ -44,7 +45,7 @@ Milestones are independent here — run them in parallel.
 ## Post-merge verification (shadow / load / canary / rollout — the evidence each should produce)
 ## Test strategy (levels & what each covers)
 ## Coverage plan (task → acceptance criteria → test; risk-weighted)
-## Unit tests (what, where, against which behavior)
+## Unit test design (per test: behaviour title → criterion, cases, doubles, oracle, bugs to catch; what gets no unit test)
 ## E2E tests (flows, scenarios, data / environments)
 ## CI integration & flakiness considerations
 ## Coverage gaps & accepted risks

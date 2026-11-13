@@ -342,6 +342,11 @@ grep -q "g=git" <<<"$zout" || fail "aliases not loaded"
 grep -q "(feature)" <<<"$zout" || fail "prompt doesn't show the git branch: $zout"
 pass "interactive zsh"
 
+# Skills that ship scripts test them with node:test, next to the script.
+node --test "$DOTFILES"/agents/skills/*/scripts/*.test.mjs > "$SANDBOX/skill-scripts.log" 2>&1 \
+    || { cat "$SANDBOX/skill-scripts.log"; fail "skill script tests"; }
+pass "skill script tests"
+
 # dotfiles-update: pulls a clean main and re-runs install, refuses otherwise.
 # Runs last because it relinks $HOME to a scratch clone.
 up="$SANDBOX/upstream"; mkdir -p "$up"

@@ -1,0 +1,10 @@
+schema_version: "1.1"
+name: embedded-write-tests
+expected_outcome: |
+  A src/shipping.test.ts covering the three designed behaviours with the
+  designed cases, including 49_99 / 50_00 / 50_01. Every planned bug to catch
+  is probed with probe-mutation.mjs --log .ai-dev/probes.jsonl and is KILLED.
+  src/shipping.ts is unchanged, the tests pass, and the reply lists one line
+  per test saying how it was proven.
+context:
+  scaffold_script: place-files.sh

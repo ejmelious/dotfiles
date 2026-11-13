@@ -1,0 +1,19 @@
+schema_version: "1.1"
+name: audit-orders-overmocked
+expected_outcome: |
+  An audit explaining that place-order.test.ts mocks the repo's own pure and
+  persistence modules (./pricing, ./order-repo), so it mostly proves the mocks agree.
+  It identifies "prices the order" as asserting the stubbed 54_00 back
+  (tautology) plus a call to a pure internal function, and "looks up the
+  customer" as asserting a query (findCustomer) instead of an outcome. It
+  spots the leaking stub: the beforeAll defaults plus mockResolvedValue(null)
+  in the last test, with no mockReset, so shuffled order breaks other tests
+  (ideally shown with --sequence.shuffle). It recommends using the real
+  priceOrder (it's pure), an injected or in-memory fake for the repository
+  with assertions on saved state, and asserting the email command at the
+  network edge (MSW) or through an injected notifier. It notes that
+  "saved before emailing" may legitimately be a contract. It names the
+  untested SAVE10 threshold boundary (49.99 vs 50.00) and the coupon being
+  applied end to end. No files are changed.
+context:
+  scaffold_script: place-files.sh

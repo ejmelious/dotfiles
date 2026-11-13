@@ -1,0 +1,13 @@
+schema_version: "1.1"
+name: embedded-plan-design
+expected_outcome: |
+  plan/unit-test-design.md maps each acceptance criterion (AC-2.1a–e) to tests
+  with behaviour titles and cases, including both sides of the $50.00 boundary.
+  It stubs CarrierRates as a query without asserting it was called, and uses
+  an in-memory fake (or recording stub) for QuoteRepository, asserting the
+  saved quote's state. Expected values come from the spec. Bugs to catch are
+  named by intent, since the code doesn't exist yet. It lists what gets no
+  unit test (the CarrierRates HTTP adapter, which is the contract test's job).
+  No source or test code is written.
+context:
+  scaffold_script: place-files.sh
