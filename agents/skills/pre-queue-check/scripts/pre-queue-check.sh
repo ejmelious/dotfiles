@@ -27,7 +27,10 @@ for arg in "$@"; do
 done
 
 repo="$(git rev-parse --show-toplevel)" || exit 2
-wt="$repo/.ai-dev/pre-queue/worktree"
+mkdir -p "$repo/.ai-dev/pre-queue"
+# Resolved because .ai-dev may be a symlink, and git reports the worktree's
+# real path, which reset_worktree compares against.
+wt="$(cd "$repo/.ai-dev/pre-queue" && pwd -P)/worktree"
 run_dir="$repo/.ai-dev/pre-queue/logs/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$run_dir"
 
@@ -141,7 +144,19 @@ for entry in "${prs[@]}"; do
         || problems+=("unit tests")
     elif [[ ${#tests[@]} -gt 0 ]]; then
       echo "  changed tests: ${#tests[@]} file(s)"
-      (cd "$wt" && just unit-test "${tests[@]}") >"$log/unit-test.log" 2>&1 || problems+=("unit tests")
+      # just unit-test refuses files from more than one workspace.
+      declare -A tests_by_workspace=()
+      for t in "${tests[@]}"; do
+        w="$(workspace_of "$t")"
+        tests_by_workspace["${w:-.}"]+="$t "
+      done
+      : >"$log/unit-test.log"
+      tests_failed=false
+      for w in "${!tests_by_workspace[@]}"; do
+        read -ra group <<<"${tests_by_workspace[$w]}"
+        (cd "$wt" && just unit-test "${group[@]}") >>"$log/unit-test.log" 2>&1 || tests_failed=true
+      done
+      if $tests_failed; then problems+=("unit tests"); fi
     fi
   fi
 
