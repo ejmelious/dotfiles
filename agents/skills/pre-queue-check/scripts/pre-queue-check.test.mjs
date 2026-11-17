@@ -10,6 +10,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const script = join(dirname(fileURLToPath(import.meta.url)), 'pre-queue-check.sh');
+// Homebrew may put a newer Bash first on PATH; keep covering macOS's system Bash.
+const bash = process.platform === 'darwin' ? '/bin/bash' : 'bash';
 
 function git(cwd, ...args) {
   return execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', ...args], {
@@ -26,7 +28,7 @@ function write(root, path, body) {
 // A repo whose PR branch adds `prFiles` on top of a main with workspaces
 // packages/a and packages/b. `symlinkAiDev` makes .ai-dev a symlink to a
 // directory outside the repo, as on machines that share .ai-dev through EFS.
-function setup({ prFiles, symlinkAiDev, justFailsOn = 'no-such-path' }) {
+function setup({ prFiles, symlinkAiDev, justFailsOn = 'no-such-path', listedPrs = '7\n' }) {
   const root = mkdtempSync(join(tmpdir(), 'pre-queue-test-'));
   const origin = join(root, 'origin.git');
   const repo = join(root, 'repo');
@@ -61,7 +63,7 @@ function setup({ prFiles, symlinkAiDev, justFailsOn = 'no-such-path' }) {
     files: prFiles.map((path) => ({ path })),
   });
   const stubs = {
-    gh: `printf '%s\\n' '${meta}'`,
+    gh: `if [[ "$1 $2" == 'pr list' ]]; then printf '%s' '${listedPrs}'; else printf '%s\\n' '${meta}'; fi`,
     turbo: `echo "turbo $*" >> '${calls}'`,
     just: `echo "just $*" >> '${calls}'; [[ "$*" != *'${justFailsOn}'* ]]`,
     pnpm: 'exit 0',
@@ -73,8 +75,8 @@ function setup({ prFiles, symlinkAiDev, justFailsOn = 'no-such-path' }) {
   return { repo, bin, calls };
 }
 
-function run({ repo, bin }) {
-  return spawnSync('bash', [script, '7'], {
+function run({ repo, bin }, args = ['7']) {
+  return spawnSync(bash, [script, ...args], {
     cwd: repo,
     encoding: 'utf8',
     env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
@@ -117,4 +119,44 @@ test('fails the PR when one workspace\'s tests fail and another\'s pass', () => 
   assert.equal(r.status, 1, r.stdout + r.stderr);
   assert.match(r.stdout, /#7 FAIL against main: unit tests/);
   assert.equal(justCalls(env.calls).length, 2);
+});
+
+test('discovers open PRs when none are supplied', () => {
+  const env = setup({ prFiles: ['packages/a/src/x.test.ts'] });
+  const r = run(env, []);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /#7 PASS/);
+  assert.deepEqual(justCalls(env.calls), ['just unit-test packages/a/src/x.test.ts']);
+});
+
+test('exits successfully when there are no open PRs', () => {
+  const env = setup({ prFiles: ['README.md'], listedPrs: '' });
+  const r = run(env, []);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.equal(r.stderr, '');
+  assert.match(r.stdout, /No PRs to check\./);
+});
+
+test('reports no workspace checks for root-only changes', () => {
+  const env = setup({ prFiles: ['README.md'] });
+  const r = run(env);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /#7 PASS against main \(0 commits behind; 0 workspace\(s\), 0 test file\(s\)\)/);
+});
+
+test('runs workspace checks without unit tests when no test files changed', () => {
+  const env = setup({ prFiles: ['packages/a/src/x.ts'] });
+  const r = run(env);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /#7 PASS against main \(0 commits behind; 1 workspace\(s\), 0 test file\(s\)\)/);
+  assert.match(readFileSync(env.calls, 'utf8'), /turbo typecheck lint -F @x\/a/);
+  assert.deepEqual(justCalls(env.calls), []);
+});
+
+test('skips unit tests for a workspace with only source changes', () => {
+  const env = setup({ prFiles: ['packages/a/src/x.test.ts', 'packages/b/src/z.ts'] });
+  const r = run(env);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /#7 PASS/);
+  assert.deepEqual(justCalls(env.calls), ['just unit-test packages/a/src/x.test.ts']);
 });
