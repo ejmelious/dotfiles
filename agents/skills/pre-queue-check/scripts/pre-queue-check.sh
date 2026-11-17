@@ -27,12 +27,15 @@ for arg in "$@"; do
 done
 
 repo="$(git rev-parse --show-toplevel)" || exit 2
-wt="$repo/.ai-dev/pre-queue/worktree"
+mkdir -p "$repo/.ai-dev/pre-queue"
+# Resolved because .ai-dev may be a symlink, and git reports the worktree's
+# real path, which reset_worktree compares against.
+wt="$(cd "$repo/.ai-dev/pre-queue" && pwd -P)/worktree"
 run_dir="$repo/.ai-dev/pre-queue/logs/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$run_dir"
 
 if [[ ${#prs[@]} -eq 0 ]]; then
-  mapfile -t prs < <(gh pr list --author @me --state open --json number --jq '.[].number')
+  while IFS= read -r pr; do prs+=("$pr"); done < <(gh pr list --author @me --state open --json number --jq '.[].number')
 fi
 if [[ ${#prs[@]} -eq 0 ]]; then
   echo "No PRs to check."
@@ -99,11 +102,12 @@ for entry in "${prs[@]}"; do
   fi
   head="${override_head:-$(jq -r .headRefOid <<<"$meta")}"
   base="$(jq -r .baseRefName <<<"$meta")"
-  mapfile -t files < <(jq -r '.files[].path' <<<"$meta")
+  files=()
+  while IFS= read -r f; do files+=("$f"); done < <(jq -r '.files[].path' <<<"$meta")
 
-  head_ref=()
-  git -C "$repo" cat-file -e "$head^{commit}" 2>/dev/null || head_ref=("$head")
-  if ! git -C "$repo" fetch -q origin "${head_ref[@]}" "+refs/heads/$base:refs/remotes/origin/$base" 2>"$log/fetch.log"; then
+  fetch_refs=("+refs/heads/$base:refs/remotes/origin/$base")
+  git -C "$repo" cat-file -e "$head^{commit}" 2>/dev/null || fetch_refs+=("$head")
+  if ! git -C "$repo" fetch -q origin "${fetch_refs[@]}" 2>"$log/fetch.log"; then
     summary+=("#$pr ERROR: fetch failed (see $log/fetch.log)"); failed=1; continue
   fi
   git -C "$wt" checkout -q --detach "$head" || { summary+=("#$pr ERROR: checkout failed"); failed=1; continue; }
@@ -123,12 +127,18 @@ for entry in "${prs[@]}"; do
     summary+=("#$pr ERROR: pnpm install failed (see $log/install.log)"); failed=1; reset_worktree; continue
   fi
 
-  mapfile -t workspaces < <(for f in "${files[@]}"; do workspace_of "$f"; done | sort -u)
+  workspaces=()
+  # Bash 3.2 treats empty arrays as unset under nounset.
+  while IFS= read -r w; do workspaces+=("$w"); done < <(
+    for f in ${files[@]+"${files[@]}"}; do workspace_of "$f"; done | sort -u
+  )
   filters=()
-  for w in "${workspaces[@]}"; do filters+=(-F "$w"); done
-  mapfile -t tests < <(for f in "${files[@]}"; do
-    [[ "$f" =~ \.(test|spec)\.[cm]?[jt]sx?$ && -f "$wt/$f" ]] && echo "$f"
-  done)
+  for w in ${workspaces[@]+"${workspaces[@]}"}; do filters+=(-F "$w"); done
+  tests=()
+  test_pattern='\.(test|spec)\.[cm]?[jt]sx?$'
+  for f in ${files[@]+"${files[@]}"}; do
+    if [[ "$f" =~ $test_pattern && -f "$wt/$f" ]]; then tests+=("$f"); fi
+  done
 
   problems=()
   if [[ ${#filters[@]} -gt 0 ]]; then
@@ -141,7 +151,18 @@ for entry in "${prs[@]}"; do
         || problems+=("unit tests")
     elif [[ ${#tests[@]} -gt 0 ]]; then
       echo "  changed tests: ${#tests[@]} file(s)"
-      (cd "$wt" && just unit-test "${tests[@]}") >"$log/unit-test.log" 2>&1 || problems+=("unit tests")
+      # just unit-test refuses files from more than one workspace.
+      : >"$log/unit-test.log"
+      tests_failed=false
+      for w in "${workspaces[@]}"; do
+        group=()
+        for t in "${tests[@]}"; do
+          if [[ "$(workspace_of "$t")" == "$w" ]]; then group+=("$t"); fi
+        done
+        if [[ ${#group[@]} -eq 0 ]]; then continue; fi
+        (cd "$wt" && just unit-test "${group[@]}") >>"$log/unit-test.log" 2>&1 || tests_failed=true
+      done
+      if $tests_failed; then problems+=("unit tests"); fi
     fi
   fi
 
